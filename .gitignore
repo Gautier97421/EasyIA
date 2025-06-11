@@ -1,0 +1,10 @@
+node_modules/
+
+.next/
+
+.DS_Store
+Thumbs.db
+
+.env
+
+videos/
