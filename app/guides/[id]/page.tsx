@@ -10,11 +10,16 @@ import { useParams } from "next/navigation"
 import { getGuides } from "@/lib/auth-supabase"
 import type { Guide } from "@/lib/auth-supabase"
 import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { UserNav } from "@/components/auth/user-nav"
 
 export default function GuideDetailPage() {
   const params = useParams()
   const [guide, setGuide] = useState<Guide | null>(null)
-  const { user, loading } = useAuth()
+  const { user, loading, profile } = useAuth()
+  const router = useRouter()
+  
 
   useEffect(() => {
     const loadGuide = async () => {
@@ -60,6 +65,14 @@ export default function GuideDetailPage() {
     )
   }
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
+  }
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case "débutant":
@@ -74,21 +87,41 @@ export default function GuideDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-gray-900 dark:via-background dark:to-purple-900">
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-gray-900 dark:via-background dark:to-purple-900">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <Brain className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold">EasyIA</span>
-            </Link>
-            <Link href="/guides">
-              <Button variant="ghost">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Retour aux cours écrits
-              </Button>
-            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button variant="outline" size="sm" onClick={handleBack}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
+              <ThemeToggle />
+              <div className="flex items-center space-x-2 ml-4">
+                <Brain className="h-8 w-8 text-blue-600" />
+                <span className="text-2xl font-bold">EasyIA</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                {user && profile ? (
+                  <UserNav/>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Link href="/login">
+                      <Button variant="ghost" size="sm">
+                        Connexion
+                      </Button>
+                    </Link>
+                    <Link href="/register">
+                      <Button size="sm">Inscription</Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </header>

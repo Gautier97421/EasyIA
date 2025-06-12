@@ -26,6 +26,14 @@ export default function AboutPage() {
     satisfaction: 0,
     users: 0,
   })
+  
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -64,13 +72,6 @@ export default function AboutPage() {
     loadData()
   }, [])
 
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      router.back()
-    } else {
-      router.push("/")
-    }
-  }
 
   const statsDisplay = [
     {

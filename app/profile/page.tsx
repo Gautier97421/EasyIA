@@ -11,7 +11,6 @@ import { useAuth } from "@/hooks/use-auth"
 export default function ProfilePage() {
   const router = useRouter()
   const { user, profile, loading } = useAuth()
-  console.log("USER =", user)
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back()

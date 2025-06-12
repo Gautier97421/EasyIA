@@ -22,7 +22,11 @@ export default function RegisterPage() {
   const router = useRouter()
 
   const handleBack = () => {
-    router.back() // Revient à la page précédente
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

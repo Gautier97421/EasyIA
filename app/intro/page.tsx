@@ -16,6 +16,13 @@ export default function IntroPage() {
   const { user, profile, loading, isAdmin, refreshProfile } = useAuth()
   const [isCompleting, setIsCompleting] = useState(false)
   const router = useRouter()
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
+  }
 
   useEffect(() => {
     const loadGuide = async () => {
@@ -26,7 +33,7 @@ export default function IntroPage() {
     loadGuide()
 
     // Si l'utilisateur a déjà complété l'intro, rediriger vers les cours
-    if (profile?.has_completed_intro) {
+    if (profile?.hasCompletedIntro) {
       router.push("/courses")
     }
   }, [profile, router])
@@ -64,6 +71,7 @@ export default function IntroPage() {
       </div>
     )
   }
+  
   const handleCompleteIntro = async () => {
     if (user) {
       setIsCompleting(true)
@@ -79,6 +87,7 @@ export default function IntroPage() {
       }
     }
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-gray-900 dark:via-background dark:to-purple-900">
       {/* Header */}
@@ -87,7 +96,7 @@ export default function IntroPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>

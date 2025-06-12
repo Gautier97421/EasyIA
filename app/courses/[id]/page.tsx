@@ -10,11 +10,23 @@ import { useParams } from "next/navigation"
 import { getCourses } from "@/lib/auth-supabase"
 import type { Course } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { UserNav } from "@/components/auth/user-nav"
 
 export default function CourseDetailPage() {
   const params = useParams()
   const [course, setCourse] = useState<Course | null>(null)
   const { user, profile, loading, isAdmin } = useAuth()
+  const router = useRouter()
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
+  }
 
   useEffect(() => {
     const loadCourse = async () => {
@@ -80,14 +92,33 @@ export default function CourseDetailPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/courses">
-                <Button variant="outline" size="sm">
+              <Link href="/">
+                <Button variant="outline" size="sm" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <div className="flex items-center space-x-2">
+              <ThemeToggle />
+              <div className="flex items-center space-x-2 ml-4">
                 <Brain className="h-8 w-8 text-blue-600" />
                 <span className="text-2xl font-bold">EasyIA</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                {user && profile ? (
+                  <UserNav/>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Link href="/login">
+                      <Button variant="ghost" size="sm">
+                        Connexion
+                      </Button>
+                    </Link>
+                    <Link href="/register">
+                      <Button size="sm">Inscription</Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -113,7 +144,7 @@ export default function CourseDetailPage() {
         <Card className="mb-8">
           <CardContent className="p-0">
             <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-              {course.videoUrl && course.videoUrl !== "/placeholder.mp4" ? (
+              {course.video_url && course.video_url !== "/placeholder.mp4" ? (
                 <video
                   controls
                   className="w-full h-full rounded-lg"
@@ -122,7 +153,7 @@ export default function CourseDetailPage() {
                     "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=450&fit=crop&crop=center"
                   }
                 >
-                  <source src={course.videoUrl} type="video/mp4" />
+                  <source src={course.video_url} type="video/mp4" />
                   Votre navigateur ne supporte pas la lecture vidéo.
                 </video>
               ) : (

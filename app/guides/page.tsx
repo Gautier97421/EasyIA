@@ -13,6 +13,7 @@ import type { Guide, IntroGuide } from "@/lib/types"
 import { UserNav } from "@/components/auth/user-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/router"
 
 export default function GuidesPage() {
   const [guides, setGuides] = useState<Guide[]>([])
@@ -22,6 +23,14 @@ export default function GuidesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [introGuide, setIntroGuide] = useState<IntroGuide | null>(null)
   const { user, profile, loading, isAdmin, hasCompletedIntro } = useAuth()
+  const router = useRouter()
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -97,7 +106,7 @@ export default function GuidesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={handleBack}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
