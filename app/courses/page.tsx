@@ -123,7 +123,7 @@ export default function CoursesPage() {
               </Link>
               <div className="flex items-center space-x-2">
                 {user && profile ? (
-                  <UserNav user={{ ...user, name: profile.name, role: profile.role }} />
+                  <UserNav/>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Link href="/login">

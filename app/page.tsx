@@ -62,7 +62,7 @@ export default function HomePage() {
                 </Link>
               </nav>
               {user ? (
-                <UserNav user={user} />
+                <UserNav/>
               ) : (
                 <div className="flex items-center space-x-2">
                   <Link href="/login">

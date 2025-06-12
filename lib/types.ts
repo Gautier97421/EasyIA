@@ -14,14 +14,14 @@ export interface Course {
   id: string
   title: string
   description: string
-  videoUrl: string
+  video_url: string
   duration: number
   level: "débutant" | "intermédiaire" | "avancé"
   category: string
   thumbnail: string | null
   tools: string[] // Nouveaux outils utilisés dans le cours
-  createdAt: string
-  updatedAt: string
+  created_at: string
+  updated_at: string
 }
 
 export interface Guide {
@@ -34,8 +34,8 @@ export interface Guide {
   category: string
   thumbnail: string | null
   tools: string[] // Nouveaux outils utilisés dans le guide
-  createdAt: string
-  updatedAt: string
+  created_at: string
+  updated_at: string
 }
 
 export interface Tool {

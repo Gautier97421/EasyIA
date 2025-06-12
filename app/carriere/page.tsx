@@ -25,22 +25,22 @@ export default function CarrierePage() {
     {
       icon: Heart,
       title: "Passion",
-      description: "Je suis passionné par l'IA et son potentiel pour transformer l'éducation",
+      description: "L’IA nous offre la liberté d’explorer sans limites et de laisser libre cours à notre imagination pour créer des solutions inédites.",
     },
     {
       icon: Users,
-      title: "Communauté",
-      description: "Je crois en la force de la communauté et du partage de connaissances",
+      title: "Partage",
+      description: "J’aimerais partager avec vous la passion et la vision qui m’animent autour de l’IA, pour vous faire ressentir tout le potentiel et la magie qu’elle peut offrir.",
     },
     {
       icon: Target,
       title: "Accessibilité",
-      description: "Je m'engage à rendre l'IA accessible à tous, sans barrière technique",
+      description: "Je souhaite que l’IA soit facile d’accès et de compréhension, pour que chacun puisse en saisir la puissance sans barrières ni complexités.",
     },
     {
       icon: Zap,
       title: "Innovation",
-      description: "Je cherche constamment à améliorer l'expérience d'apprentissage",
+      description: " Participer aux 24h d’innovation m’a permis de repousser mes limites et d’imaginer des solutions concrètes pour l’avenir et l’évolution technologique.",
     },
   ]
 
@@ -69,7 +69,7 @@ export default function CarrierePage() {
               </Link>
               <div className="flex items-center space-x-2">
                 {user && profile ? (
-                  <UserNav user={{ ...user, name: profile.name, role: profile.role }} />
+                  <UserNav/>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Link href="/login">
@@ -89,7 +89,7 @@ export default function CarrierePage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
+        {/* Intro */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">À propos d'EasyIA</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -97,7 +97,7 @@ export default function CarrierePage() {
           </p>
         </div>
 
-        {/* About the Creator */}
+        {/* About moi*/}
         <div className="mb-16">
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
@@ -105,12 +105,12 @@ export default function CarrierePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p>
-                Bonjour ! Je suis le créateur d'EasyIA, une plateforme que j'ai développée seul avec la passion de
-                démocratiser l'accès à l'Intelligence Artificielle.
+                Bonjour ! Je suis le créateur d'EasyIA, une plateforme que j'ai développée avec la passion de
+                simplifié l'accès à l'Intelligence Artificielle.
               </p>
               <p>
-                Avec une formation en développement web et une expertise en IA, j'ai créé EasyIA pour partager mes
-                connaissances et aider les professionnels à intégrer l'IA dans leur quotidien, sans avoir besoin de
+                Avec une formation d'ingénieurs informatique et une spécialité en IA, j'ai créé EasyIA pour partager mes
+                connaissances, ce qui me semble essentiel à comprendre et apprendre et aider les professionnels à intégrer l'IA dans leur quotidien, sans avoir besoin de
                 compétences techniques avancées.
               </p>
               <p>
@@ -127,7 +127,7 @@ export default function CarrierePage() {
           </Card>
         </div>
 
-        {/* Values Section */}
+        {/* Valeurs */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-8">Mes valeurs</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -147,7 +147,7 @@ export default function CarrierePage() {
           </div>
         </div>
 
-        {/* Mission Section */}
+        {/* Missions */}
         <div className="mb-16">
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
@@ -164,14 +164,14 @@ export default function CarrierePage() {
                 révolutionnaire.
               </p>
               <p>
-                Mon objectif est de créer des contenus pratiques, concrets et immédiatement applicables pour vous aider
+                Mon objectif est de créer et reprendre des contenus pratiques, concrets et immédiatement applicables pour vous aider
                 à intégrer l'IA dans votre quotidien professionnel.
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Contact Section */}
+        {/* Contact */}
         <div className="text-center">
           <Card className="max-w-2xl mx-auto">
             <CardHeader>

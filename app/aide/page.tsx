@@ -154,7 +154,7 @@ export default function AidePage() {
               </Link>
               <div className="flex items-center space-x-2">
                 {user && profile ? (
-                  <UserNav user={{ ...user, name: profile.name, role: profile.role }} />
+                  <UserNav/>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Link href="/login">
@@ -219,19 +219,19 @@ export default function AidePage() {
             </CardHeader>
             <CardContent className="text-center">
               <Link href="/tools">
-                <Button variant="outline">Guide technique</Button>
+                <Button>Guide technique</Button>
               </Link>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader className="text-center">
-              <CardTitle className="text-lg">💬 Contact</CardTitle>
-              <CardDescription>Besoin d'aide personnalisée ?</CardDescription>
+              <CardTitle className="text-lg">💬 Avis</CardTitle>
+              <CardDescription>Partagez vos idées et suggestions pour aider la plateforme.</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Link href="/contact">
-                <Button variant="outline">Nous contacter</Button>
+              <Link href="/avis">
+                <Button>Les avis</Button>
               </Link>
             </CardContent>
           </Card>
@@ -293,9 +293,6 @@ export default function AidePage() {
                 <Link href="/contact">
                   <Button size="lg">Nous contacter</Button>
                 </Link>
-                <Button variant="outline" size="lg" onClick={() => setSearchTerm("")}>
-                  Parcourir toutes les FAQ
-                </Button>
               </div>
             </CardContent>
           </Card>

@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/use-auth"
 export default function ProfilePage() {
   const router = useRouter()
   const { user, profile, loading } = useAuth()
-
+  console.log("USER =", user)
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back()
@@ -115,7 +115,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Informations du compte */}
+          {/* Informations compte */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -126,11 +126,7 @@ export default function ProfilePage() {
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Membre depuis :</span>
-                <span>{new Date(user.created_at || "").toLocaleDateString("fr-FR")}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Dernière connexion :</span>
-                <span>{new Date(user.last_sign_in_at || "").toLocaleDateString("fr-FR")}</span>
+                <span>{"createdAt" in user && user.createdAt ? new Date(user.createdAt as string).toLocaleDateString("fr-FR") : "Inconnu"}</span>
               </div>
             </CardContent>
           </Card>

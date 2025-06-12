@@ -347,6 +347,25 @@ export async function deleteGuide(id: string) {
   if (error) throw error
 }
 
+//App essentiels et installation
+export async function getEssentialApps() {
+  const { data, error } = await supabase.from("essential_apps").select("*").order("id");
+  if (error) {
+    console.error("Erreur getEssentialApps:", error);
+    return [];
+  }
+  return data;
+}
+
+export async function getInstallations() {
+  const { data, error } = await supabase.from("installations").select("*, installation_commands(*)").order("id");
+  if (error) {
+    console.error("Erreur getInstallations:", error);
+    return [];
+  }
+  return data;
+}
+
 // Progression utilisateur
 export async function getUserProgress(userId: string): Promise<UserProgress[]> {
   const { data, error } = await supabase.from("user_progress").select("*").eq("user_id", userId)
@@ -452,7 +471,6 @@ export async function sendContactMessage(name: string, email: string, subject: s
 
 // Fonction pour insérer les données initiales
 export async function seedDatabase() {
-  // Insérer les cours initiaux
   const initialCourses = [
     {
       title: "Introduction à ChatGPT",

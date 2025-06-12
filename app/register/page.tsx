@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Brain } from "lucide-react"
+import { Brain, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function RegisterPage() {
   const [name, setName] = useState("")
@@ -18,6 +19,11 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const supabase = createClient()
+  const router = useRouter()
+
+  const handleBack = () => {
+    router.back() // Revient à la page précédente
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,28 +45,16 @@ export default function RegisterPage() {
       if (error) {
         setError(error.message)
       } else if (data.user) {
-        // Créer le profil utilisateur
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: data.user.id,
-          name,
-          role: "user",
-          has_completed_intro: false,
-        })
+        setSuccess(true)
 
-        if (profileError) {
-          setError(profileError.message)
-        } else {
-          setSuccess(true)
+        // Stockage temporaire pour confirmer la connexion
+        localStorage.setItem("justLoggedIn", "true")
 
-          // Stockage temporaire pour confirmer la connexion
-          localStorage.setItem("justLoggedIn", "true")
-
-          // Redirection après un court délai
-          setTimeout(() => {
-            window.location.href = "/"
-          }, 2000)
-        }
-      }
+        // Redirection après un court délai
+        setTimeout(() => {
+        window.location.href = "/login"
+      }, 20000)
+    }
     } catch (err: any) {
       console.error("Erreur d'inscription:", err)
       setError("Une erreur inattendue s'est produite")
@@ -71,6 +65,12 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-purple-900 p-4">
+      <div className="self-start mb-4">
+        <Button variant="outline" size="sm" onClick={handleBack} className="flex items-center space-x-1">
+          <ArrowLeft className="h-4 w-4" />
+          <span>Retour</span>
+        </Button>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
@@ -78,13 +78,14 @@ export default function RegisterPage() {
             <span className="text-2xl font-bold">EasyIA</span>
           </div>
           <CardTitle>Inscription</CardTitle>
-          <CardDescription>Créez un compte pour accéder à toutes les formations</CardDescription>
+          <CardDescription>La création du compte vous permettra d'accéder à toutes nos formations</CardDescription>
         </CardHeader>
         <CardContent>
           {success ? (
             <div className="text-center space-y-4">
               <div className="text-green-600 font-medium">Inscription réussie !</div>
-              <p>Vous allez être redirigé vers la page d'accueil...</p>
+              <p>Il vous manque plus qu'à vérifier votre authentification sur votre mail pour finaliser votre inscription</p>
+              <p>Vous allez être redirigé vers la page de login...</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -126,12 +127,6 @@ export default function RegisterPage() {
               </Button>
             </form>
           )}
-          <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">Déjà un compte ? </span>
-            <Link href="/login" className="text-blue-600 hover:underline">
-              Se connecter
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>

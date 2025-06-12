@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,12 +11,15 @@ import { UserNav } from "@/components/auth/user-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { getEssentialApps, getInstallations } from "@/lib/auth-supabase"
 
 export default function ToolsPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const { user, profile, isAdmin } = useAuth()
-
+  // const [essentialApps, setEssentialApps] = useState([]);
+  // const [installations, setInstallations] = useState([]);
+  // const [loading, setLoading] = useState(true);
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back()
@@ -24,6 +27,16 @@ export default function ToolsPage() {
       router.push("/")
     }
   }
+  // useEffect(() => {
+  //   async function fetchData() {
+  //     const apps = await getEssentialApps();
+  //     const installs = await getInstallations();
+  //     setEssentialApps(apps);
+  //     setInstallations(installs);
+  //     setLoading(false);
+  //   }
+  //   fetchData();
+  // }, []);
 
   // Configuration matérielle recommandée
   const hardwareRequirements = [
@@ -31,10 +44,10 @@ export default function ToolsPage() {
       category: "Configuration Minimale",
       description: "Pour débuter avec l'IA et les outils de base",
       specs: [
-        "Processeur : Intel i5 ou AMD Ryzen 5",
-        "RAM : 8 GB minimum",
-        "Stockage : 256 GB SSD",
-        "Connexion : Internet stable (10 Mbps+)",
+        "Un écran (pas cassé de préférence",
+        "Youtube",
+        "Du temps et un café",
+        "L’envie d’évoluer dans un monde qui va vite",
       ],
       color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
     },
@@ -43,9 +56,9 @@ export default function ToolsPage() {
       description: "Pour une utilisation confortable et productive",
       specs: [
         "Processeur : Intel i7 ou AMD Ryzen 7",
-        "RAM : 16 GB",
-        "Stockage : 512 GB SSD",
-        "GPU : Carte graphique dédiée (optionnel)",
+        "RAM : 8-16 GB",
+        "Stockage : 256-512 GB SSD",
+        "GPU : RTX 2060 / RTX 3060 (ou utiliser Google Colab)",
       ],
       color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
     },
@@ -54,8 +67,8 @@ export default function ToolsPage() {
       description: "Pour le développement IA et l'entraînement de modèles",
       specs: [
         "Processeur : Intel i9 ou AMD Ryzen 9",
-        "RAM : 32 GB ou plus",
-        "Stockage : 1 TB SSD NVMe",
+        "RAM : 16-32 GB ou plus",
+        "Stockage : 512GB-1 TB SSD NVMe",
         "GPU : NVIDIA RTX 4070+ avec 12GB+ VRAM",
       ],
       color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
@@ -167,6 +180,7 @@ export default function ToolsPage() {
       install.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       install.description.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-gray-900 dark:via-background dark:to-purple-900">
@@ -193,7 +207,7 @@ export default function ToolsPage() {
               </Link>
               <div className="flex items-center space-x-2">
                 {user && profile ? (
-                  <UserNav user={{ ...user, name: profile.name, role: profile.role }} />
+                  <UserNav/>
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Link href="/login">

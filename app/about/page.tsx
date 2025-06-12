@@ -9,8 +9,13 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/hooks/use-auth"
-import { getCourses, getGuides } from "@/lib/auth-supabase"
+import { getCourses, getGuides, introGuide } from "@/lib/auth-supabase"
 import { UserNav } from "@/components/auth/user-nav"
+import { IntroGuide } from "@/lib/types"
+import type { Database } from "@/lib/types2/database"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+
+const supabase = createClientComponentClient<Database>()
 
 export default function AboutPage() {
   const router = useRouter()
@@ -18,8 +23,8 @@ export default function AboutPage() {
   const [stats, setStats] = useState({
     courses: 0,
     hours: 0,
-    satisfaction: 98,
-    users: 1000,
+    satisfaction: 0,
+    users: 0,
   })
 
   useEffect(() => {
@@ -27,17 +32,29 @@ export default function AboutPage() {
       try {
         const courses = await getCourses()
         const guides = await getGuides()
+        const introGuides: IntroGuide[] = [introGuide]
+        const { count, error } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+
+        if (error) {
+          console.error("Erreur lors du comptage des utilisateurs :", error)
+        }
+
+        const totalUsers = count ?? 0
+        console.log("Total users =", totalUsers)
 
         const totalCourses = courses.length + guides.length
         const totalHours =
           courses.reduce((acc, course) => acc + course.duration, 0) +
-          guides.reduce((acc, guide) => acc + guide.read_time, 0)
+          guides.reduce((acc, guide) => acc + guide.read_time, 0) +
+          introGuides.reduce((acc, guide) => acc + guide.readTime, 0)
 
         setStats({
           courses: totalCourses,
           hours: Math.ceil(totalHours / 60),
           satisfaction: 98,
-          users: 1000,
+          users: totalUsers,
         })
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error)
@@ -58,17 +75,17 @@ export default function AboutPage() {
   const statsDisplay = [
     {
       label: "Cours disponibles",
-      value: stats.courses > 100 ? "100+" : `${stats.courses}`,
+      value: `${stats.courses}`,
       icon: BookOpen,
     },
     {
-      label: "Utilisateurs actifs",
-      value: stats.users > 100 ? `${Math.floor(stats.users / 1000)}k+` : `${stats.users}+`,
+      label: "Utilisateurs",
+      value: stats.users > 1000 ? "1000+" : `${stats.users}`,
       icon: Users,
     },
     {
       label: "Heures de contenu",
-      value: stats.hours > 100 ? "100+" : `${stats.hours}+`,
+      value: stats.hours > 100 ? "100+" : `${stats.hours}`,
       icon: Play,
     },
     {

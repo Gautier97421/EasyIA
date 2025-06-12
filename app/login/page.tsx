@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Brain } from "lucide-react"
+import { Brain, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { signIn } from "@/lib/auth-supabase"
+import { useRouter } from "next/navigation"
 
 
 export default function LoginPage() {
@@ -21,6 +22,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const supabase = createClient()
+  const router = useRouter()
+  
+  const handleBack = () => {
+    router.back() // Revient à la page précédente
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,6 +80,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-purple-900 p-4">
+      <div className="self-start mb-4">
+        <Button variant="outline" size="sm" onClick={handleBack} className="flex items-center space-x-1">
+          <ArrowLeft className="h-4 w-4" />
+          <span>Retour</span>
+        </Button>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">

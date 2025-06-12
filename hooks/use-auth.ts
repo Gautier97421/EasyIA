@@ -25,12 +25,20 @@ export function useAuth() {
       .select("*")
       .eq("id", userId)
       .single()
+
     if (!error && profileData) {
-      setProfile(profileData)
-      localStorage.setItem("currentUser", JSON.stringify(profileData))
+      const mappedProfile = {
+        id: profileData.id,
+        name: profileData.name,
+        email: profileData.email,
+        role: profileData.role,
+        hasCompletedIntro: profileData.has_completed_intro,
+      }
+
+      setProfile(mappedProfile)
+      localStorage.setItem("currentUser", JSON.stringify(mappedProfile))
     }
   }
-
   const getUser = async () => {
     setLoading(true)
     // tente le cache local
@@ -51,7 +59,8 @@ export function useAuth() {
       } = await supabase.auth.getSession()
       if (session?.user) {
         await fetchProfile(session.user.id)
-        setUser({ ...session.user, name: profile?.name, role: profile?.role })
+        const localProfile = JSON.parse(localStorage.getItem("currentUser") || "{}")
+        setUser({ ...session.user, name: localProfile.name, role: localProfile.role })
       } else {
         setUser(null)
         setProfile(null)
