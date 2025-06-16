@@ -83,7 +83,7 @@ export default function EditCoursePage() {
         duration: Number.parseInt(duration),
         level: level as "débutant" | "intermédiaire" | "avancé",
         category,
-        thumbnail: thumbnail || "/placeholder.svg?height=200&width=300",
+        thumbnail: thumbnail || "/img_IA.jpg",
         tools,
       })
 

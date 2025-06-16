@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -31,8 +32,12 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError("")
+    if (password !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    setLoading(true)
 
     try {
       // Inscription avec Supabase
@@ -62,9 +67,11 @@ export default function RegisterPage() {
     } catch (err: any) {
       console.error("Erreur d'inscription:", err)
       setError("Une erreur inattendue s'est produite")
+    } finally {
+      setLoading(false);
     }
 
-    setLoading(false)
+ 
   }
 
   return (
@@ -77,10 +84,10 @@ export default function RegisterPage() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
+          <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
             <Brain className="h-8 w-8 text-blue-600" />
             <span className="text-2xl font-bold">EasyIA</span>
-          </div>
+          </Link>  
           <CardTitle>Inscription</CardTitle>
           <CardDescription>La création du compte vous permettra d'accéder à toutes nos formations</CardDescription>
         </CardHeader>
@@ -125,12 +132,29 @@ export default function RegisterPage() {
                   minLength={6}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmez le mot de passe</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
               {error && <div className="text-red-600 text-sm text-center">{error}</div>}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Inscription..." : "S'inscrire"}
               </Button>
             </form>
           )}
+          <div className="mt-4 text-center text-sm">
+            <span className="text-muted-foreground">Déjà un compte ? </span>
+            <Link href="/login" className="text-blue-600 hover:underline">
+              Se connecter
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

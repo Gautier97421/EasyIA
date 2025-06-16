@@ -10,6 +10,8 @@ export type Course = Database["public"]["Tables"]["courses"]["Row"]
 export type Guide = Database["public"]["Tables"]["guides"]["Row"]
 export type UserProgress = Database["public"]["Tables"]["user_progress"]["Row"]
 export type Review = Database["public"]["Tables"]["reviews"]["Row"]
+export {supabase}
+export type UserFavorite = Database["public"]["Tables"]["user_favorites"]["Row"]
 
 const supabase = createClient()
 
@@ -378,6 +380,12 @@ export async function getUserProgress(userId: string): Promise<UserProgress[]> {
   return data || []
 }
 
+export async function unmarkCourseCompleted(userId: string, courseId: string) {
+  const { error } = await supabase.from("user_progress").delete().eq("user_id", userId).eq("course_id", courseId)
+
+  if (error) throw error
+}
+
 export async function markCourseCompleted(userId: string, courseId: string) {
   const { data, error } = await supabase
     .from("user_progress")
@@ -394,6 +402,12 @@ export async function markCourseCompleted(userId: string, courseId: string) {
 
   if (error) throw error
   return data
+}
+
+export async function unmarkGuideCompleted(userId: string, guideId: string) {
+  const { error } = await supabase.from("user_progress").delete().eq("user_id", userId).eq("guide_id", guideId)
+
+  if (error) throw error
 }
 
 export async function markGuideCompleted(userId: string, guideId: string) {
@@ -413,6 +427,75 @@ export async function markGuideCompleted(userId: string, guideId: string) {
   if (error) throw error
   return data
 }
+
+// Favoris utilisateur
+export async function getUserFavorites(userId: string): Promise<UserFavorite[]> {
+  const { data, error } = await supabase.from("user_favorites").select("*").eq("user_id", userId)
+
+  if (error) {
+    console.error("Error fetching user favorites:", error)
+    return []
+  }
+
+  return data || []
+}
+
+export async function addToFavorites(userId: string, courseId: string | null = null, guideId: string | null = null) {
+  try {
+    const insertData: any = {
+      user_id: userId,
+    }
+
+    if (courseId) {
+      insertData.course_id = courseId
+      insertData.guide_id = null
+    } else if (guideId) {
+      insertData.guide_id = guideId
+      insertData.course_id = null
+    } else {
+      throw new Error("Either courseId or guideId must be provided")
+    }
+
+    const { data, error } = await supabase.from("user_favorites").insert(insertData).select().single()
+
+    if (error) {
+      console.error("Error adding to favorites:", error)
+      throw error
+    }
+    return data
+  } catch (error) {
+    console.error("Error in addToFavorites:", error)
+    throw error
+  }
+}
+
+export async function removeFromFavorites(
+  userId: string,
+  courseId: string | null = null,
+  guideId: string | null = null,) {
+  try {
+    let query = supabase.from("user_favorites").delete().eq("user_id", userId)
+
+    if (courseId) {
+      query = query.eq("course_id", courseId).is("guide_id", null)
+    } else if (guideId) {
+      query = query.eq("guide_id", guideId).is("course_id", null)
+    } else {
+      throw new Error("Either courseId or guideId must be provided")
+    }
+
+    const { error } = await query
+
+    if (error) {
+      console.error("Error removing from favorites:", error)
+      throw error
+    }
+  } catch (error) {
+    console.error("Error in removeFromFavorites:", error)
+    throw error
+  }
+}
+
 
 // Avis
 export async function getReviews(): Promise<Review[]> {

@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { createClient } from '@supabase/supabase-js'
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,15 +15,24 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { UserNav } from "@/components/auth/user-nav"
 import { useAuth } from "@/hooks/use-auth"
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
 export default function AvisPage() {
   const router = useRouter()
-  const { user, profile, isAdmin } = useAuth()
+  const { user, profile } = useAuth()
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
   const [comment, setComment] = useState("")
-  const [name, setName] = useState(user?.email || "")
   const [submitted, setSubmitted] = useState(false)
-
+  const [testimonials, setTestimonials] = useState<any[]>([])
+  const [stats, setStats] = useState({
+    averageRating: 0,
+    totalReviews: 0,
+    satisfaction: 0,
+    recommendations: 0,
+  })
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back()
@@ -32,52 +41,126 @@ export default function AvisPage() {
     }
   }
 
+  // Fetch testimonials
+  async function fetchTestimonials() {
+    const { data, error } = await supabase
+      .from("reviews")
+      .select(`
+        *,
+        profiles (
+          name
+        )
+      `)
+      .order("created_at", { ascending: false })
+
+
+    if (error) {
+      console.error("Erreur chargement avis :", error.message)
+      return
+    }
+    console.log("Avis récupérés :", data)
+    setTestimonials(data || [])
+  }
+
+  // Fetch stats
+  async function fetchStats() {
+    const { data, error } = await supabase.from("reviews").select("rating")
+
+    if (error) {
+      console.error("Erreur fetch stats", error)
+      return
+    }
+    if (!data || data.length === 0) {
+      setStats({
+        averageRating: 0,
+        totalReviews: 0,
+        satisfaction: 0,
+        recommendations: 0,
+      })
+      return
+    }
+
+    const totalReviews = data.length
+    const sumRatings = data.reduce((acc, r) => acc + (r.rating ?? 0), 0)
+    const averageRating = parseFloat((sumRatings / totalReviews).toFixed(1))
+    const satisfiedCount = data.filter((r) => r.rating >= 4).length
+    const satisfaction = Math.round((satisfiedCount / totalReviews) * 100)
+    const recommendations = satisfaction
+
+    setStats({
+      averageRating,
+      totalReviews,
+      satisfaction,
+      recommendations,
+    })
+  }
+
+  useEffect(() => {
+    fetchTestimonials()
+    fetchStats()
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (rating === 0) return
+    if (rating === 0 || !user) return
 
-    // Simulation d'envoi
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const { error } = await supabase.from("reviews").insert([
+      {
+        user_id: user.id,
+        rating,
+        comment,
+      },
+    ])
+
+    if (error) {
+      console.error("Erreur lors de l'envoi de l'avis :", error.message)
+      return
+    }
+
     setSubmitted(true)
+    setComment("")
+    setRating(0)
+    await fetchTestimonials()
+    await fetchStats()
   }
 
-  const testimonials = [
-    {
-      name: "Marie Dubois",
-      role: "Marketing Manager",
-      rating: 5,
-      comment: "EasyIA m'a permis de découvrir ChatGPT et d'automatiser mes campagnes email. Je gagne 3h par semaine !",
-      date: "Il y a 2 semaines",
-    },
-    {
-      name: "Thomas Martin",
-      role: "Consultant",
-      rating: 5,
-      comment: "Les cours sont très clairs et pratiques. J'utilise maintenant l'IA pour mes présentations clients.",
-      date: "Il y a 1 mois",
-    },
-    {
-      name: "Sophie Laurent",
-      role: "RH",
-      rating: 4,
-      comment: "Excellente plateforme pour débuter. Les exemples concrets m'ont beaucoup aidée.",
-      date: "Il y a 3 semaines",
-    },
-    {
-      name: "Pierre Durand",
-      role: "Chef de projet",
-      rating: 5,
-      comment: "Formation complète et accessible. Je recommande vivement pour tous les professionnels.",
-      date: "Il y a 1 semaine",
-    },
-  ]
+  // const testimonials = [
+  //   {
+  //     name: "Marie Dubois",
+  //     role: "Marketing Manager",
+  //     rating: 5,
+  //     comment: "EasyIA m'a permis de découvrir ChatGPT et d'automatiser mes campagnes email. Je gagne 3h par semaine !",
+  //     date: "Il y a 2 semaines",
+  //   },
+  //   {
+  //     name: "Thomas Martin",
+  //     role: "Consultant",
+  //     rating: 5,
+  //     comment: "Les cours sont très clairs et pratiques. J'utilise maintenant l'IA pour mes présentations clients.",
+  //     date: "Il y a 1 mois",
+  //   },
+  //   {
+  //     name: "Sophie Laurent",
+  //     role: "RH",
+  //     rating: 4,
+  //     comment: "Excellente plateforme pour débuter. Les exemples concrets m'ont beaucoup aidée.",
+  //     date: "Il y a 3 semaines",
+  //   },
+  //   {
+  //     name: "Pierre Durand",
+  //     role: "Chef de projet",
+  //     rating: 5,
+  //     comment: "Formation complète et accessible. Je recommande vivement pour tous les professionnels.",
+  //     date: "Il y a 1 semaine",
+  //   },
+  // ]
 
-  const stats = {
-    totalReviews: 847,
-    averageRating: 4.8,
-    satisfaction: 98,
-    recommendations: 96,
-  }
+  // const stats = {
+  //   totalReviews: 847,
+  //   averageRating: 4.8,
+  //   satisfaction: 98,
+  //   recommendations: 96,
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-gray-900 dark:via-background dark:to-purple-900">
@@ -90,10 +173,10 @@ export default function AvisPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <ThemeToggle />
-              <div className="flex items-center space-x-2 ml-4">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold">EasyIA</span>
-              </div>
+                <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">EasyIA</span>
+                </Link>  
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/courses" className="text-muted-foreground hover:text-blue-600 transition-colors">
@@ -225,12 +308,12 @@ export default function AvisPage() {
 
                   {!user && (
                     <div className="space-y-2">
-                      <Label htmlFor="name">Votre nom</Label>
+                      <Label htmlFor="role">Votre rôle ou métier</Label>
                       <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Nom (optionnel)"
+                        id="role"
+                        value={user ? profile?.role || "" : "Vous devez être connecté pour remplir ce champ"}
+                        disabled={!user}
+                        className={!user ? "text-red-500 placeholder-red-500" : ""}
                       />
                     </div>
                   )}
@@ -247,7 +330,11 @@ export default function AvisPage() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={rating === 0}>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!user || rating === 0}
+                  >
                     Publier mon avis
                   </Button>
                 </form>
@@ -264,7 +351,7 @@ export default function AvisPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg">{testimonial.name}</CardTitle>
+                      <CardTitle className="text-lg">{testimonial.profiles?.name || "Utilisateur anonyme"}</CardTitle>
                       <CardDescription>{testimonial.role}</CardDescription>
                     </div>
                     <div className="flex items-center space-x-1">
@@ -281,7 +368,7 @@ export default function AvisPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-2">"{testimonial.comment}"</p>
-                  <p className="text-xs text-muted-foreground">{testimonial.date}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(testimonial.created_at).toLocaleDateString()}</p>
                 </CardContent>
               </Card>
             ))}

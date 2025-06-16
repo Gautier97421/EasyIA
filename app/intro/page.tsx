@@ -33,9 +33,9 @@ export default function IntroPage() {
     loadGuide()
 
     // Si l'utilisateur a déjà complété l'intro, rediriger vers les cours
-    if (profile?.hasCompletedIntro) {
-      router.push("/courses")
-    }
+    // if (profile?.hasCompletedIntro) {
+    //   router.push("/courses")
+    // }
   }, [profile, router])
 
   if (loading) {
@@ -78,9 +78,9 @@ export default function IntroPage() {
       try {
         await completeIntro(user.id)
 
-        await refreshProfile() // ← MET À JOUR LE PROFIL LOCAL
+        await refreshProfile()
 
-        router.push("/courses") // ← redirection propre, sans forcer un rechargement complet
+        router.push("/courses")
       } catch (error) {
         console.error("Erreur lors de la complétion de l'intro:", error)
         setIsCompleting(false)
@@ -100,10 +100,10 @@ export default function IntroPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <div className="flex items-center space-x-2">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold">EasyIA</span>
-              </div>
+              <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">EasyIA</span>
+                </Link>  
             </div>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function IntroPage() {
                     .replace(/\n/g, "<br>")
                     .replace(
                       /src="placeholder"/g,
-                      'src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop&crop=center"',
+                      'src="/img_IA.jpg"',
                     ),
                 }}
               />

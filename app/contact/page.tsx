@@ -77,10 +77,10 @@ export default function ContactPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <ThemeToggle />
-              <div className="flex items-center space-x-2 ml-4">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold">EasyIA</span>
-              </div>
+                <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">EasyIA</span>
+                </Link>  
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/courses" className="text-muted-foreground hover:text-blue-600 transition-colors">

@@ -1,11 +1,11 @@
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
         Row: {
           id: string
           name: string
-          role: "user" | "admin"
+          role: "admin" | "user"
           has_completed_intro: boolean
           satisfaction_rating: number | null
           created_at: string
@@ -14,7 +14,7 @@ export interface Database {
         Insert: {
           id: string
           name: string
-          role?: "user" | "admin"
+          role?: "admin" | "user"
           has_completed_intro?: boolean
           satisfaction_rating?: number | null
           created_at?: string
@@ -23,9 +23,10 @@ export interface Database {
         Update: {
           id?: string
           name?: string
-          role?: "user" | "admin"
+          role?: "admin" | "user"
           has_completed_intro?: boolean
           satisfaction_rating?: number | null
+          created_at?: string
           updated_at?: string
         }
       }
@@ -38,7 +39,7 @@ export interface Database {
           duration: number
           level: "débutant" | "intermédiaire" | "avancé"
           category: string
-          thumbnail: string | null
+          thumbnail: string
           tools: string[]
           created_at: string
           updated_at: string
@@ -51,8 +52,8 @@ export interface Database {
           duration: number
           level: "débutant" | "intermédiaire" | "avancé"
           category: string
-          thumbnail?: string | null
-          tools?: string[]
+          thumbnail: string
+          tools: string[]
           created_at?: string
           updated_at?: string
         }
@@ -64,8 +65,9 @@ export interface Database {
           duration?: number
           level?: "débutant" | "intermédiaire" | "avancé"
           category?: string
-          thumbnail?: string | null
+          thumbnail?: string
           tools?: string[]
+          created_at?: string
           updated_at?: string
         }
       }
@@ -78,7 +80,7 @@ export interface Database {
           read_time: number
           level: "débutant" | "intermédiaire" | "avancé"
           category: string
-          thumbnail: string | null
+          thumbnail: string
           tools: string[]
           created_at: string
           updated_at: string
@@ -91,8 +93,8 @@ export interface Database {
           read_time: number
           level: "débutant" | "intermédiaire" | "avancé"
           category: string
-          thumbnail?: string | null
-          tools?: string[]
+          thumbnail: string
+          tools: string[]
           created_at?: string
           updated_at?: string
         }
@@ -104,8 +106,9 @@ export interface Database {
           read_time?: number
           level?: "débutant" | "intermédiaire" | "avancé"
           category?: string
-          thumbnail?: string | null
+          thumbnail?: string
           tools?: string[]
+          created_at?: string
           updated_at?: string
         }
       }
@@ -119,6 +122,7 @@ export interface Database {
           progress_percentage: number
           completed_at: string | null
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -129,6 +133,7 @@ export interface Database {
           progress_percentage?: number
           completed_at?: string | null
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -138,6 +143,31 @@ export interface Database {
           completed?: boolean
           progress_percentage?: number
           completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      user_favorites: {
+        Row: {
+          id: string
+          user_id: string
+          course_id: string | null
+          guide_id: string | null
+          added_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          course_id?: string | null
+          guide_id?: string | null
+          added_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          course_id?: string | null
+          guide_id?: string | null
+          added_at?: string
         }
       }
       reviews: {
@@ -147,6 +177,7 @@ export interface Database {
           rating: number
           comment: string | null
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -154,12 +185,41 @@ export interface Database {
           rating: number
           comment?: string | null
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           user_id?: string
           rating?: number
           comment?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      contact_messages: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          subject: string
+          message: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email: string
+          subject: string
+          message: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          subject?: string
+          message?: string
+          created_at?: string
         }
       }
     }

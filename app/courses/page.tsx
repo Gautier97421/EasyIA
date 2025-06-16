@@ -6,16 +6,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Brain, Play, Clock, Search, Filter, ArrowLeft, Settings, Lock, BookOpen } from "lucide-react"
+import { Brain, Play, Clock, Search, Filter, ArrowLeft, CheckCircle, Lock, Check, BookOpen, Star, X } from "lucide-react"
 import Link from "next/link"
-import { getCourses, getIntroGuide } from "@/lib/auth-supabase"
+import { getCourses, getIntroGuide, markCourseCompleted, unmarkCourseCompleted, getUserProgress,
+  getUserFavorites,
+  addToFavorites,
+  removeFromFavorites, } from "@/lib/auth-supabase"
 import type { Course, IntroGuide } from "@/lib/types"
 import { UserNav } from "@/components/auth/user-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/hooks/use-auth"
-import { useRouter } from "next/router"
+import { useRouter, useParams } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 
 export default function CoursesPage() {
+  const params = useParams()
   const [courses, setCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -23,8 +28,14 @@ export default function CoursesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [introGuide, setIntroGuide] = useState<IntroGuide | null>(null)
   const { user, profile, loading, isAdmin, hasCompletedIntro } = useAuth()
+  const [sortOrder, setSortOrder] = useState("title_asc")
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [isToggling, setIsToggling] = useState(false)
+  const [progressLoaded, setProgressLoaded] = useState(false)
+  const [courseProgress, setCourseProgress] = useState<Map<string, boolean>>(new Map())
+  const [courseFavorites, setCourseFavorites] = useState<Map<string, boolean>>(new Map())
+  const [processingFavorite, setProcessingFavorite] = useState<Set<string>>(new Set())
   const router = useRouter()
-
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back()
@@ -41,10 +52,121 @@ export default function CoursesPage() {
 
       const guide = await getIntroGuide()
       setIntroGuide(guide)
+      // Charger les progressions et favoris si l'utilisateur est connecté
+      if (user) {
+        try {
+          // Charger les progressions
+          const progress = await getUserProgress(user.id)
+          const progressMap = new Map<string, boolean>()
+          progress.forEach((p) => {
+            if (p.course_id) progressMap.set(p.course_id, p.completed)
+          })
+          setCourseProgress(progressMap)
+
+          // Charger les favoris
+          const favorites = await getUserFavorites(user.id)
+          const favoritesMap = new Map<string, boolean>()
+          favorites.forEach((f) => {
+            if (f.course_id) favoritesMap.set(f.course_id, true)
+          })
+          setCourseFavorites(favoritesMap)
+        } catch (error) {
+          console.error("Error loading user data:", error)
+        }
+      }
     }
 
     loadData()
-  }, [])
+  }, [user])
+
+  const toggleFavorite = async (courseId: string) => {
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour ajouter des cours en favoris.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Éviter les clics multiples
+    if (processingFavorite.has(courseId)) return
+
+    setProcessingFavorite((prev) => new Set(prev).add(courseId))
+
+    try {
+      const isFavorite = courseFavorites.get(courseId)
+
+      if (isFavorite) {
+        // Retirer des favoris
+        await removeFromFavorites(user.id, courseId)
+        setCourseFavorites((prev) => {
+          const newMap = new Map(prev)
+          newMap.delete(courseId)
+          return newMap
+        })
+        toast({
+          title: "Retiré des favoris",
+          description: "Le cours a été retiré de vos favoris.",
+        })
+      } else {
+        // Ajouter aux favoris
+        await addToFavorites(user.id, courseId)
+        setCourseFavorites((prev) => {
+          const newMap = new Map(prev)
+          newMap.set(courseId, true)
+          return newMap
+        })
+        toast({
+          title: "Ajouté aux favoris",
+          description: "Le cours a été ajouté à vos favoris.",
+        })
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error)
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue. Veuillez réessayer.",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessingFavorite((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(courseId)
+        return newSet
+      })
+    }
+  }
+  
+  // Fonction de tri selon sortOrder
+  const sortCourses = (coursesToSort: Course[]) => {
+    const sorted = [...coursesToSort]
+    switch (sortOrder) {
+      case "title_asc":
+        sorted.sort((a, b) => a.title.localeCompare(b.title))
+        break
+      case "title_desc":
+        sorted.sort((a, b) => b.title.localeCompare(a.title))
+        break
+      case "date_asc":
+        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        break
+      case "date_desc":
+        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        break
+      case "level_asc":
+        const levels = ["débutant", "intermédiaire", "avancé"]
+        sorted.sort((a, b) => levels.indexOf(a.level) - levels.indexOf(b.level))
+        break
+      case "level_desc":
+        const levelsDesc = ["avancé", "intermédiaire", "débutant"]
+        sorted.sort((a, b) => levelsDesc.indexOf(a.level) - levelsDesc.indexOf(b.level))
+        break
+      default:
+        break
+    }
+    return sorted
+  }
 
   useEffect(() => {
     let filtered = courses
@@ -64,18 +186,10 @@ export default function CoursesPage() {
     if (categoryFilter !== "all") {
       filtered = filtered.filter((course) => course.category === categoryFilter)
     }
+    filtered = sortCourses(filtered)
 
     setFilteredCourses(filtered)
-  }, [courses, searchTerm, levelFilter, categoryFilter])
-
-  useEffect(() => {
-    if (!loading && user && profile) {
-      console.log("🔒 isCourseLocked:", isCourseLocked())
-      console.log("📘 hasCompletedIntro:", hasCompletedIntro)
-      console.log("👤 Profil:", profile)
-    }
-  }, [loading, user, profile, hasCompletedIntro])
-
+  }, [courses, searchTerm, levelFilter, categoryFilter, sortOrder])
 
   const categories = Array.from(new Set(courses.map((course) => course.category)))
 
@@ -95,7 +209,6 @@ export default function CoursesPage() {
   const isCourseLocked = (): boolean => {
     return !!(user && profile?.role === "user" && !hasCompletedIntro)
   }
-
 
   const shouldShowIntro = () => {
     return user && profile?.role === "user" && !hasCompletedIntro
@@ -122,10 +235,10 @@ export default function CoursesPage() {
                 </Button>
               </Link>
               <ThemeToggle />
-              <div className="flex items-center space-x-2 ml-4">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold">EasyIA</span>
-              </div>
+                <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">EasyIA</span>
+                </Link>  
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/guides" className="text-muted-foreground hover:text-blue-600 transition-colors">
@@ -174,7 +287,7 @@ export default function CoursesPage() {
             <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
               <div className="relative">
                 <img
-                  src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop&crop=center"
+                  src="img_IA.jpg"
                   alt={introGuide.title}
                   className="w-full h-48 object-cover rounded-t-lg"
                 />
@@ -243,6 +356,19 @@ export default function CoursesPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sortOrder} onValueChange={setSortOrder} disabled={isCourseLocked()}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Trier par" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="title_asc">Alphabetique ↑</SelectItem>
+                <SelectItem value="title_desc">Alphabetique ↓</SelectItem>
+                <SelectItem value="date_asc">Date ↑</SelectItem>
+                <SelectItem value="date_desc">Date ↓</SelectItem>
+                <SelectItem value="level_asc">Difficulté ↑</SelectItem>
+                <SelectItem value="level_desc">Difficulté ↓</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -257,16 +383,22 @@ export default function CoursesPage() {
                 <img
                   src={
                     course.thumbnail ||
-                    "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=200&fit=crop&crop=center" ||
+                    "/img_IA.jpg" ||
                     "/placeholder.svg"
                   }
                   alt={course.title}
                   className="w-full h-48 object-cover rounded-t-lg"
                   onError={(e) => {
                     e.currentTarget.src =
-                      "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=200&fit=crop&crop=center"
+                      "/img_IA.jpg"
                   }}
                 />
+                {isCompleted && (
+                  <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded shadow-lg z-10">
+                    <Check className="inline h-4 w-4 mr-1" />
+                    Terminé
+                  </div>
+                )}
                 {isCourseLocked() && (
                   <div className="absolute inset-0 bg-black/70 rounded-t-lg flex items-center justify-center">
                     <div className="text-center text-white">
@@ -276,24 +408,40 @@ export default function CoursesPage() {
                   </div>
                 )}
                 {!isCourseLocked() && (
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-lg flex items-center justify-center">
-                    <Button size="lg" className="bg-white/20 backdrop-blur-sm hover:bg-white/30">
-                      <Play className="h-6 w-6 mr-2" />
-                      Regarder
-                    </Button>
-                  </div>
+                  <Link href={`/courses/${course.id}`} className="absolute inset-0 rounded-t-lg">
+                    <div className="bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-full h-full flex items-center justify-center rounded-t-lg">
+                      <Button
+                        size="lg"
+                        className="bg-white/20 backdrop-blur-sm hover:bg-white/30 pointer-events-none"
+                      >
+                        <Play className="h-6 w-6 mr-2" />
+                        Regarder
+                      </Button>
+                    </div>
+                  </Link>
                 )}
               </div>
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <CardTitle
-                    className={`text-lg transition-colors ${!isCourseLocked() ? "group-hover:text-blue-600" : ""}`}
-                  >
+                    className={`text-lg transition-colors ${!isCourseLocked() ? "group-hover:text-blue-600" : ""}`}>
                     {course.title}
                   </CardTitle>
                   <Badge className={getLevelColor(course.level)}>{course.level}</Badge>
+                  {isCompleted && (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <Check className="h-3 w-3 mr-1" /> Terminé</Badge>)}
+
                 </div>
                 <CardDescription>{course.description}</CardDescription>
+                {courseFavorites.get(course.id) && (
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-yellow-500 text-white cursor-default hover:bg-yellow-500">
+                      <Star className="h-3 w-3 mr-1 fill-current" />
+                      Favori
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
@@ -310,12 +458,25 @@ export default function CoursesPage() {
                       Cours verrouillé
                     </Button>
                   ) : (
-                    <Link href={`/courses/${course.id}`}>
-                      <Button className="w-full">
-                        <Play className="h-4 w-4 mr-2" />
-                        Commencer le cours
-                      </Button>
-                    </Link>
+                    <Button
+                      className={`w-full ${courseFavorites.get(course.id) ? "bg-red-600 hover:bg-red-700": "bg-yellow-600 hover:bg-yellow-700"}`}
+                      onClick={() => toggleFavorite(course.id)}
+                      disabled={processingFavorite.has(course.id)}
+                    >
+                      {processingFavorite.has(course.id) ? (
+                        "Traitement..."
+                      ) : courseFavorites.get(course.id) ? (
+                        <>
+                          <X className="h-4 w-4 mr-2" />
+                          Retirer des favoris
+                        </>
+                      ) : (
+                        <>
+                          <Star className="h-4 w-4 mr-2" />
+                          Ajouter en favoris
+                        </>
+                      )}
+                    </Button>
                   )
                 ) : (
                   <Link href="/login">

@@ -53,3 +53,21 @@ export interface IntroGuide {
   content: string
   readTime: number
 }
+
+export interface UserFavorite {
+  id: string
+  user_id: string
+  content_type: "course" | "guide"
+  content_id: string
+  created_at: Date
+}
+
+export interface UserProgress {
+  id: string
+  user_id: string
+  content_type: "course" | "guide"
+  content_id: string
+  completed: boolean
+  completed_at?: Date
+  created_at: Date
+}

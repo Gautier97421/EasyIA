@@ -92,10 +92,10 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
+          <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
             <Brain className="h-8 w-8 text-blue-600" />
             <span className="text-2xl font-bold">EasyIA</span>
-          </div>
+          </Link>  
           <CardTitle>{isResetting ? "Réinitialiser le mot de passe" : "Connexion"}</CardTitle>
           <CardDescription>
             {isResetting

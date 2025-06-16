@@ -4,20 +4,30 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Brain, ArrowLeft, Clock, Play, Settings } from "lucide-react"
+import { Brain, ArrowLeft, Clock, Play, CheckCircle, Check, X } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { getCourses } from "@/lib/auth-supabase"
+import { getCourses, markCourseCompleted, getUserProgress, unmarkCourseCompleted } from "@/lib/auth-supabase"
 import type { Course } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserNav } from "@/components/auth/user-nav"
 
+function extractYouTubeId(url: string): string | null {
+  const regex =
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  const match = url.match(regex)
+  return match ? match[1] : null
+}
+
 export default function CourseDetailPage() {
   const params = useParams()
   const [course, setCourse] = useState<Course | null>(null)
   const { user, profile, loading, isAdmin } = useAuth()
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [isToggling, setIsToggling] = useState(false)
+  const [progressLoaded, setProgressLoaded] = useState(false)
   const router = useRouter()
 
   const handleBack = () => {
@@ -32,11 +42,46 @@ export default function CourseDetailPage() {
     const loadCourse = async () => {
       const courses = await getCourses()
       const foundCourse = courses.find((c) => c.id === params.id)
+      console.log('course.video_url:', foundCourse?.video_url)
       setCourse(foundCourse || null)
     }
 
     loadCourse()
   }, [params.id])
+
+  useEffect(() => {
+    const checkProgress = async () => {
+      if (user && params.id && !progressLoaded) {
+        const progress = await getUserProgress(user.id)
+        const courseProgress = progress.find((p) => p.course_id === params.id && p.completed)
+        setIsCompleted(!!courseProgress)
+        setProgressLoaded(true)
+      }
+    }
+
+    checkProgress()
+  }, [user, params.id, progressLoaded])
+
+  const handleToggleCompleted = async () => {
+    if (!user || !params.id) return
+
+    setIsToggling(true)
+    try {
+      if (isCompleted) {
+        // Démarquer comme terminé
+        await unmarkCourseCompleted(user.id, params.id as string)
+        setIsCompleted(false)
+      } else {
+        // Marquer comme terminé
+        await markCourseCompleted(user.id, params.id as string)
+        setIsCompleted(true)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification du statut du cours:", error)
+    } finally {
+      setIsToggling(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -98,10 +143,10 @@ export default function CourseDetailPage() {
                 </Button>
               </Link>
               <ThemeToggle />
-              <div className="flex items-center space-x-2 ml-4">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold">EasyIA</span>
-              </div>
+                <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">EasyIA</span>
+                </Link>  
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -131,6 +176,12 @@ export default function CourseDetailPage() {
           <div className="flex items-center gap-4 mb-4">
             <Badge className={getLevelColor(course.level)}>{course.level}</Badge>
             <Badge variant="outline">{course.category}</Badge>
+            {isCompleted && (
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <Check className="h-3 w-3 mr-1" />
+                Terminé
+              </Badge>
+            )}
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-4">{course.title}</h1>
           <p className="text-xl text-muted-foreground mb-6">{course.description}</p>
@@ -143,22 +194,18 @@ export default function CourseDetailPage() {
         {/* Video Player */}
         <Card className="mb-8">
           <CardContent className="p-0">
-            <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-              {course.video_url && course.video_url !== "/placeholder.mp4" ? (
-                <video
-                  controls
-                  className="w-full h-full rounded-lg"
-                  poster={
-                    course.thumbnail ||
-                    "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=450&fit=crop&crop=center"
-                  }
-                >
-                  <source src={course.video_url} type="video/mp4" />
-                  Votre navigateur ne supporte pas la lecture vidéo.
-                </video>
+            <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              {course.video_url && extractYouTubeId(course.video_url) ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${extractYouTubeId(course.video_url)}`}
+                  title="Video player"
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
               ) : (
-                <div className="text-center text-white">
-                  <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <div className="text-center text-white flex flex-col items-center justify-center h-full">
+                  <Play className="h-16 w-16 mb-4 opacity-50" />
                   <p className="text-lg">Vidéo à venir</p>
                   <p className="text-sm opacity-75">Ce cours sera bientôt disponible</p>
                 </div>
@@ -213,12 +260,40 @@ export default function CourseDetailPage() {
               <CardTitle className="text-lg">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full">
-                <Play className="h-4 w-4 mr-2" />
-                Marquer comme terminé
-              </Button>
+              {progressLoaded && (
+                <Button
+                  className={`w-full ${isCompleted ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}`}
+                  onClick={handleToggleCompleted}
+                  disabled={isToggling}
+                  variant={isCompleted ? "secondary" : "default"}>
+                  {isToggling ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {isCompleted ? "Dévalidation..." : "Validation..."}
+                    </>
+                  ) : isCompleted ? (
+                    <>
+                      <span className="flex items-center gap-0.5">
+                        <X className="h-4 w-4" />
+                        Marquer comme non terminé
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Marquer comme terminé
+                    </>
+                  )}
+                </Button>
+                )}
+              {!progressLoaded && (
+                <Button className="w-full" disabled>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Chargement...
+                </Button>
+              )}
               <Link href="/courses">
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full mt-4">
                   Retour aux cours
                 </Button>
               </Link>

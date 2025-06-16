@@ -4,20 +4,25 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Brain, ArrowLeft, Clock, BookOpen } from "lucide-react"
+import { Brain, ArrowLeft, Clock, BookOpen, Play, Check, CheckCircle, X } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { getGuides } from "@/lib/auth-supabase"
+import { getGuides, markGuideCompleted, getUserProgress, unmarkGuideCompleted } from "@/lib/auth-supabase"
 import type { Guide } from "@/lib/auth-supabase"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserNav } from "@/components/auth/user-nav"
+import { supabase } from "@/lib/auth-supabase"
+
 
 export default function GuideDetailPage() {
   const params = useParams()
   const [guide, setGuide] = useState<Guide | null>(null)
   const { user, loading, profile } = useAuth()
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [isToggling, setIsToggling] = useState(false)
+  const [progressLoaded, setProgressLoaded] = useState(false)
   const router = useRouter()
   
 
@@ -30,6 +35,38 @@ export default function GuideDetailPage() {
 
     loadGuide()
   }, [params.id])
+
+  useEffect(() => {
+    const checkProgress = async () => {
+      if (user && params.id && !progressLoaded) {
+        const progress = await getUserProgress(user.id)
+        const guideProgress = progress.find((p) => p.guide_id === params.id && p.completed)
+        setIsCompleted(!!guideProgress)
+        setProgressLoaded(true)
+      }
+    }
+
+    checkProgress()
+  }, [user, params.id, progressLoaded])
+
+  const handleToggleCompleted = async () => {
+    if (!user || !params.id) return
+
+    setIsToggling(true)
+    try {
+      if (isCompleted) {
+        await unmarkGuideCompleted(user.id, params.id as string)
+        setIsCompleted(false)
+      } else {
+        await markGuideCompleted(user.id, params.id as string)
+        setIsCompleted(true)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification du statut du cours:", error)
+    } finally {
+      setIsToggling(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -73,6 +110,14 @@ export default function GuideDetailPage() {
     }
   }
 
+  const linkedContent = guide.content
+  .replace(/\n/g, "<br>")
+  .replace(
+    /(https?:\/\/[^\s]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800">$1</a>'
+  )
+
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case "débutant":
@@ -99,10 +144,10 @@ export default function GuideDetailPage() {
                 </Button>
               </Link>
               <ThemeToggle />
-              <div className="flex items-center space-x-2 ml-4">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold">EasyIA</span>
-              </div>
+                <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">EasyIA</span>
+                </Link>  
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -132,6 +177,12 @@ export default function GuideDetailPage() {
           <div className="flex items-center gap-4 mb-4">
             <Badge className={getLevelColor(guide.level)}>{guide.level}</Badge>
             <Badge variant="outline">{guide.category}</Badge>
+            {isCompleted && (
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <Check className="h-3 w-3 mr-1" />
+                Terminé
+              </Badge>
+            )}
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-4">{guide.title}</h1>
           <p className="text-xl text-muted-foreground mb-6">{guide.description}</p>
@@ -142,13 +193,107 @@ export default function GuideDetailPage() {
         </div>
 
         {/* Guide Content */}
-        <Card>
+        <Card className="mb-8">
           <CardContent className="p-8">
             <div className="prose prose-lg dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: guide.content.replace(/\n/g, "<br>") }} />
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: guide.content
+                    .replace(/\n/g, "<br>")
+                    .replace(
+                      /(https?:\/\/[^\s<]+)/g,
+                      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline hover:text-blue-800">$1</a>'
+                    )
+                }}
+              />
             </div>
           </CardContent>
         </Card>
+        
+        {/* Guide Info */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Informations</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <span className="font-medium">Durée :</span>
+                <span className="ml-2 text-muted-foreground">{guide.read_time} minutes</span>
+              </div>
+              <div>
+                <span className="font-medium">Niveau :</span>
+                <span className="ml-2 text-muted-foreground">{guide.level}</span>
+              </div>
+              <div>
+                <span className="font-medium">Catégorie :</span>
+                <span className="ml-2 text-muted-foreground">{guide.category}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Outils utilisés</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {guide.tools && guide.tools.length > 0 ? (
+                  guide.tools.map((tool, index) => (
+                    <Badge key={index} variant="secondary">
+                      {tool}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-sm">Aucun outil spécifique</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                  className={`w-full ${isCompleted ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}`}
+                  onClick={handleToggleCompleted}
+                  disabled={isToggling}
+                  variant={isCompleted ? "secondary" : "default"}>
+                  {isToggling ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      {isCompleted ? "Dévalidation..." : "Validation..."}
+                    </>
+                  ) : isCompleted ? (
+                    <>
+                      <span className="flex items-center gap-0.5">
+                        <X className="h-4 w-4" />
+                        Marquer comme non terminé
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Marquer comme terminé
+                    </>
+                  )}
+                </Button>
+              {!progressLoaded && (
+                <Button className="w-full" disabled>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Chargement...
+                </Button>
+              )}
+              <Link href="/guides">
+                <Button variant="outline" className="w-full mt-4">
+                  Retour aux cours
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Navigation */}
         <div className="mt-8 flex justify-center">

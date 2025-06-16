@@ -115,10 +115,10 @@ export default function AdminPage() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <div className="flex items-center space-x-2">
+              <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
                 <Brain className="h-8 w-8 text-blue-600" />
                 <span className="text-2xl font-bold">EasyIA - Admin</span>
-              </div>
+              </Link>  
             </div>
           </div>
         </div>

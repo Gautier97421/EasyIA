@@ -6,16 +6,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Brain, BookOpen, Clock, Search, Filter, ArrowLeft, Settings, Lock } from "lucide-react"
+import { Brain, BookOpen, Clock, Search, Filter, ArrowLeft, Settings, X, Check, Star,  Lock, Play, CheckCircle } from "lucide-react"
 import Link from "next/link"
-import { getGuides, getIntroGuide } from "@/lib/auth-supabase"
+import { getGuides, getIntroGuide, markGuideCompleted, unmarkGuideCompleted, getUserProgress,
+  getUserFavorites,
+  addToFavorites,
+  removeFromFavorites, } from "@/lib/auth-supabase"
 import type { Guide, IntroGuide } from "@/lib/types"
 import { UserNav } from "@/components/auth/user-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/hooks/use-auth"
-import { useRouter } from "next/router"
+import { useRouter, useParams } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 
 export default function GuidesPage() {
+  const params = useParams()
   const [guides, setGuides] = useState<Guide[]>([])
   const [filteredGuides, setFilteredGuides] = useState<Guide[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -23,7 +28,13 @@ export default function GuidesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all")
   const [introGuide, setIntroGuide] = useState<IntroGuide | null>(null)
   const { user, profile, loading, isAdmin, hasCompletedIntro } = useAuth()
+  const [guideProgress, setGuideProgress] = useState<Map<string, boolean>>(new Map())
+  const [guideFavorites, setGuideFavorites] = useState<Map<string, boolean>>(new Map())
+  const [processingFavorite, setProcessingFavorite] = useState<Set<string>>(new Set())
+  const [sortOrder, setSortOrder] = useState("title_asc")
+  const [isCompleted, setIsCompleted] = useState(false)
   const router = useRouter()
+  const [isToggling, setIsToggling] = useState(false)
   const handleBack = () => {
     if (window.history.length > 1) {
       router.back()
@@ -40,10 +51,122 @@ export default function GuidesPage() {
 
       const guide = await getIntroGuide()
       setIntroGuide(guide)
+      if (user) {
+        try {
+          // Charger les progressions
+          const progress = await getUserProgress(user.id)
+          const progressMap = new Map<string, boolean>()
+          progress.forEach((p) => {
+            if (p.guide_id) progressMap.set(p.guide_id, p.completed)
+          })
+          setGuideProgress(progressMap)
+
+          // Charger les favoris
+          const favorites = await getUserFavorites(user.id)
+          const favoritesMap = new Map<string, boolean>()
+          favorites.forEach((f) => {
+            if (f.guide_id) favoritesMap.set(f.guide_id, true)
+          })
+          setGuideFavorites(favoritesMap)
+        } catch (error) {
+          console.error("Error loading user data:", error)
+          console.error("Error adding to favorites:", JSON.stringify(error, null, 2));
+        }
+      }
+    }
+    loadData()
+  }, [user])
+
+  const toggleFavorite = async (guideId: string) => {
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour ajouter des cours en favoris.",
+        variant: "destructive",
+      })
+      console.log("Trying to favorite course id:", guideId);
+
+      return
     }
 
-    loadData()
-  }, [])
+    // Éviter les clics multiples
+    if (processingFavorite.has(guideId)) return
+
+    setProcessingFavorite((prev) => new Set(prev).add(guideId))
+
+    try {
+      const isFavorite = guideFavorites.get(guideId)
+
+      if (isFavorite) {
+        // Retirer des favoris
+        await removeFromFavorites(user.id, guideId)
+        setGuideFavorites((prev) => {
+          const newMap = new Map(prev)
+          newMap.delete(guideId)
+          return newMap
+        })
+        toast({
+          title: "Retiré des favoris",
+          description: "Le cours a été retiré de vos favoris.",
+        })
+      } else {
+        // Ajouter aux favoris
+        await addToFavorites(user.id, guideId)
+        setGuideFavorites((prev) => {
+          const newMap = new Map(prev)
+          newMap.set(guideId, true)
+          return newMap
+        })
+        toast({
+          title: "Ajouté aux favoris",
+          description: "Le cours a été ajouté à vos favoris.",
+        })
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error)
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue. Veuillez réessayer.",
+        variant: "destructive",
+      })
+    } finally {
+      setProcessingFavorite((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(guideId)
+        return newSet
+      })
+    }
+  }
+
+  //Trie cours écrit
+  const sortGuides = (guidesToSort: Guide[]) => {
+    const sorted = [...guidesToSort]
+    switch (sortOrder) {
+      case "title_asc":
+        sorted.sort((a, b) => a.title.localeCompare(b.title))
+        break
+      case "title_desc":
+        sorted.sort((a, b) => b.title.localeCompare(a.title))
+        break
+      case "date_asc":
+        sorted.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        break
+      case "date_desc":
+        sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        break
+      case "level_asc":
+        const levels = ["débutant", "intermédiaire", "avancé"]
+        sorted.sort((a, b) => levels.indexOf(a.level) - levels.indexOf(b.level))
+        break
+      case "level_desc":
+        const levelsDesc = ["avancé", "intermédiaire", "débutant"]
+        sorted.sort((a, b) => levelsDesc.indexOf(a.level) - levelsDesc.indexOf(b.level))
+        break
+      default:
+        break
+    }
+    return sorted
+  }
 
   useEffect(() => {
     let filtered = guides
@@ -63,9 +186,10 @@ export default function GuidesPage() {
     if (categoryFilter !== "all") {
       filtered = filtered.filter((guide) => guide.category === categoryFilter)
     }
+    filtered = sortGuides(filtered)
 
     setFilteredGuides(filtered)
-  }, [guides, searchTerm, levelFilter, categoryFilter])
+  }, [guides, searchTerm, levelFilter, categoryFilter, sortOrder])
 
   const categories = Array.from(new Set(guides.map((guide) => guide.category)))
 
@@ -111,10 +235,10 @@ export default function GuidesPage() {
                 </Button>
               </Link>
               <ThemeToggle />
-              <div className="flex items-center space-x-2 ml-4">
-                <Brain className="h-8 w-8 text-blue-600" />
-                <span className="text-2xl font-bold">EasyIA</span>
-              </div>
+                <Link href="/" className="flex items-center space-x-2 ml-4 hover:opacity-80 transition-opacity">
+                  <Brain className="h-8 w-8 text-blue-600" />
+                  <span className="text-2xl font-bold">EasyIA</span>
+                </Link>  
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/courses" className="text-muted-foreground hover:text-blue-600 transition-colors">
@@ -163,7 +287,7 @@ export default function GuidesPage() {
             <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-lg">
               <div className="relative">
                 <img
-                  src="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop&crop=center"
+                  src="/img_IA.jpg"
                   alt={introGuide.title}
                   className="w-full h-48 object-cover rounded-t-lg"
                 />
@@ -232,9 +356,21 @@ export default function GuidesPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sortOrder} onValueChange={setSortOrder} disabled={isCourseLocked()}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Trier par" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="title_asc">Alphabetique ↑</SelectItem>
+                <SelectItem value="title_desc">Alphabetique ↓</SelectItem>
+                <SelectItem value="date_asc">Date ↑</SelectItem>
+                <SelectItem value="date_desc">Date ↓</SelectItem>
+                <SelectItem value="level_asc">Difficulté ↑</SelectItem>
+                <SelectItem value="level_desc">Difficulté ↓</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-
         {/* Guides Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGuides.map((guide) => (
@@ -246,16 +382,22 @@ export default function GuidesPage() {
                 <img
                   src={
                     guide.thumbnail ||
-                    "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=200&fit=crop&crop=center" ||
+                    "/img_IA.jpg" ||
                     "/placeholder.svg"
                   }
                   alt={guide.title}
                   className="w-full h-48 object-cover rounded-t-lg"
                   onError={(e) => {
                     e.currentTarget.src =
-                      "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=200&fit=crop&crop=center"
+                      "/img_IA.jpg"
                   }}
                 />
+                {isCompleted && (
+                  <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded shadow-lg z-10">
+                    <Check className="inline h-4 w-4 mr-1" />
+                    Terminé
+                  </div>
+                )}
                 {isCourseLocked() && (
                   <div className="absolute inset-0 bg-black/70 rounded-t-lg flex items-center justify-center">
                     <div className="text-center text-white">
@@ -265,12 +407,16 @@ export default function GuidesPage() {
                   </div>
                 )}
                 {!isCourseLocked() && (
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-lg flex items-center justify-center">
-                    <Button size="lg" className="bg-white/20 backdrop-blur-sm hover:bg-white/30">
-                      <BookOpen className="h-6 w-6 mr-2" />
-                      Lire
-                    </Button>
-                  </div>
+                  <Link href={`/guides/${guide.id}`} className="absolute inset-0 rounded-t-lg">
+                    <div className="bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-full h-full flex items-center justify-center rounded-t-lg">
+                      <Button
+                        size="lg"
+                        className="bg-white/20 backdrop-blur-sm hover:bg-white/30 pointer-events-none">
+                        <Play className="h-6 w-6 mr-2" />
+                        Regarder
+                      </Button>
+                    </div>
+                  </Link>
                 )}
               </div>
               <CardHeader>
@@ -283,6 +429,14 @@ export default function GuidesPage() {
                   <Badge className={getLevelColor(guide.level)}>{guide.level}</Badge>
                 </div>
                 <CardDescription>{guide.description}</CardDescription>
+                {guideFavorites.get(guide.id) && (
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-yellow-500 text-white cursor-default hover:bg-yellow-500">
+                      <Star className="h-3 w-3 mr-1 fill-current" />
+                      Favori
+                    </Badge>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
@@ -299,12 +453,25 @@ export default function GuidesPage() {
                       Cours verrouillé
                     </Button>
                   ) : (
-                    <Link href={`/guides/${guide.id}`}>
-                      <Button className="w-full">
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Commencer le cours
-                      </Button>
-                    </Link>
+                    <Button
+                      className={`w-full ${guideFavorites.get(guide.id) ? "bg-red-600 hover:bg-red-700": "bg-yellow-600 hover:bg-yellow-700"}`}
+                      onClick={() => toggleFavorite(guide.id)}
+                      disabled={processingFavorite.has(guide.id)}
+                    >
+                      {processingFavorite.has(guide.id) ? (
+                        "Traitement..."
+                      ) : guideFavorites.get(guide.id) ? (
+                        <>
+                          <X className="h-4 w-4 mr-2" />
+                          Retirer des favoris
+                        </>
+                      ) : (
+                        <>
+                          <Star className="h-4 w-4 mr-2" />
+                          Ajouter en favoris
+                        </>
+                      )}
+                    </Button>
                   )
                 ) : (
                   <Link href="/login">
