@@ -442,6 +442,8 @@ export async function getUserFavorites(userId: string): Promise<UserFavorite[]> 
 
 export async function addToFavorites(userId: string, courseId: string | null = null, guideId: string | null = null) {
   try {
+    console.log("📥 [addToFavorites] called with:", { userId, courseId, guideId })
+
     const insertData: any = {
       user_id: userId,
     }
@@ -456,7 +458,7 @@ export async function addToFavorites(userId: string, courseId: string | null = n
       throw new Error("Either courseId or guideId must be provided")
     }
 
-    const { data, error } = await supabase.from("user_favorites").insert(insertData).select().single()
+    const { data, error } = await supabase.from("user_favorites").insert(insertData).select()
 
     if (error) {
       console.error("Error adding to favorites:", error)

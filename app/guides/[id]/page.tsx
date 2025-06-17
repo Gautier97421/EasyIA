@@ -17,6 +17,14 @@ import { supabase } from "@/lib/auth-supabase"
 
 
 export default function GuideDetailPage() {
+    function formatReadTime(minutes: number): string {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      return `${hours}h${remainingMinutes > 0 ? ` ${remainingMinutes} min` : ""} de lecture`
+    }
+    return `${minutes} min de lecture`
+  }
   const params = useParams()
   const [guide, setGuide] = useState<Guide | null>(null)
   const { user, loading, profile } = useAuth()
@@ -188,7 +196,7 @@ export default function GuideDetailPage() {
           <p className="text-xl text-muted-foreground mb-6">{guide.description}</p>
           <div className="flex items-center text-sm text-muted-foreground">
             <Clock className="h-4 w-4 mr-1" />
-            {guide.read_time} minutes de lecture
+            {formatReadTime(guide.read_time)}
           </div>
         </div>
 

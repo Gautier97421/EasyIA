@@ -20,6 +20,14 @@ import { useRouter, useParams } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 
 export default function GuidesPage() {
+  function formatReadTime(minutes: number): string {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      return `${hours}h${remainingMinutes > 0 ? ` ${remainingMinutes} min` : ""} de lecture`
+    }
+    return `${minutes} min de lecture`
+  }
   const params = useParams()
   const [guides, setGuides] = useState<Guide[]>([])
   const [filteredGuides, setFilteredGuides] = useState<Guide[]>([])
@@ -31,6 +39,8 @@ export default function GuidesPage() {
   const [guideProgress, setGuideProgress] = useState<Map<string, boolean>>(new Map())
   const [guideFavorites, setGuideFavorites] = useState<Map<string, boolean>>(new Map())
   const [processingFavorite, setProcessingFavorite] = useState<Set<string>>(new Set())
+  const [completedGuides, setCompletedGuides] = useState<Set<string>>(new Set())
+  const isGuideCompleted = (guideId: string) => completedGuides.has(guideId)
   const [sortOrder, setSortOrder] = useState("title_asc")
   const [isCompleted, setIsCompleted] = useState(false)
   const router = useRouter()
@@ -84,12 +94,9 @@ export default function GuidesPage() {
         description: "Veuillez vous connecter pour ajouter des cours en favoris.",
         variant: "destructive",
       })
-      console.log("Trying to favorite course id:", guideId);
-
       return
     }
 
-    // Éviter les clics multiples
     if (processingFavorite.has(guideId)) return
 
     setProcessingFavorite((prev) => new Set(prev).add(guideId))
@@ -98,8 +105,9 @@ export default function GuidesPage() {
       const isFavorite = guideFavorites.get(guideId)
 
       if (isFavorite) {
-        // Retirer des favoris
-        await removeFromFavorites(user.id, guideId)
+        console.log("→ Suppression du favori en cours")
+        await removeFromFavorites(user.id,null, guideId)
+        console.log("✓ Suppression terminée")
         setGuideFavorites((prev) => {
           const newMap = new Map(prev)
           newMap.delete(guideId)
@@ -110,8 +118,9 @@ export default function GuidesPage() {
           description: "Le cours a été retiré de vos favoris.",
         })
       } else {
-        // Ajouter aux favoris
-        await addToFavorites(user.id, guideId)
+        console.log("→ Ajout du favori en cours")
+        await addToFavorites(user.id,null, guideId)
+        console.log("✓ Ajout terminé")
         setGuideFavorites((prev) => {
           const newMap = new Map(prev)
           newMap.set(guideId, true)
@@ -138,7 +147,6 @@ export default function GuidesPage() {
     }
   }
 
-  //Trie cours écrit
   const sortGuides = (guidesToSort: Guide[]) => {
     const sorted = [...guidesToSort]
     switch (sortOrder) {
@@ -190,6 +198,21 @@ export default function GuidesPage() {
 
     setFilteredGuides(filtered)
   }, [guides, searchTerm, levelFilter, categoryFilter, sortOrder])
+
+  useEffect(() => {
+    if (!user) return
+
+    const fetchProgress = async () => {
+      const progress = await getUserProgress(user.id)
+      const completed = progress
+        .filter((p) => p.completed && p.guide_id)
+        .map((p) => p.guide_id as string)
+
+      setCompletedGuides(new Set(completed))
+    }
+
+    fetchProgress()
+  }, [user])
 
   const categories = Array.from(new Set(guides.map((guide) => guide.category)))
 
@@ -376,7 +399,17 @@ export default function GuidesPage() {
           {filteredGuides.map((guide) => (
             <Card
               key={guide.id}
-              className={`hover:shadow-xl transition-all duration-300 hover:scale-105 group ${isCourseLocked() ? "opacity-60" : ""}`}
+              className={`hover:shadow-xl transition-all duration-300 hover:scale-105 group
+                ${isCourseLocked() ? "opacity-60" : ""}
+              `}
+              style={
+                isGuideCompleted(guide.id)
+                  ? {
+                      backgroundImage: 'repeating-linear-gradient(45deg, rgba(34,197,94,0.15) 0, rgba(34,197,94,0.15) 2px, transparent 5px, transparent 10px)',
+                      border: '1px solid #22c55e'
+                    }
+                  : {}
+              }
             >
               <div className="relative">
                 <img
@@ -392,10 +425,18 @@ export default function GuidesPage() {
                       "/img_IA.jpg"
                   }}
                 />
-                {isCompleted && (
+                {isGuideCompleted(guide.id) && (
                   <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded shadow-lg z-10">
                     <Check className="inline h-4 w-4 mr-1" />
                     Terminé
+                  </div>
+                )}
+                {guideFavorites.get(guide.id) && (
+                  <div className="absolute top-2 right-2">
+                    <Badge className="bg-yellow-500 text-white cursor-default hover:bg-yellow-500">
+                      <Star className="h-3 w-3 mr-1 fill-current" />
+                      Favori
+                    </Badge>
                   </div>
                 )}
                 {isCourseLocked() && (
@@ -429,20 +470,13 @@ export default function GuidesPage() {
                   <Badge className={getLevelColor(guide.level)}>{guide.level}</Badge>
                 </div>
                 <CardDescription>{guide.description}</CardDescription>
-                {guideFavorites.get(guide.id) && (
-                  <div className="absolute top-4 right-4">
-                    <Badge className="bg-yellow-500 text-white cursor-default hover:bg-yellow-500">
-                      <Star className="h-3 w-3 mr-1 fill-current" />
-                      Favori
-                    </Badge>
-                  </div>
-                )}
+
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    {guide.read_time} min de lecture
+                    {formatReadTime(guide.read_time)}
                   </div>
                   <Badge variant="outline">{guide.category}</Badge>
                 </div>

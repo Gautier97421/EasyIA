@@ -20,6 +20,14 @@ import { useRouter, useParams } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 
 export default function CoursesPage() {
+  function formatReadTime(minutes: number): string {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      return `${hours}h${remainingMinutes > 0 ? ` ${remainingMinutes} min` : ""} de lecture`
+    }
+    return `${minutes} min de lecture`
+  }
   const params = useParams()
   const [courses, setCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
@@ -35,6 +43,8 @@ export default function CoursesPage() {
   const [courseProgress, setCourseProgress] = useState<Map<string, boolean>>(new Map())
   const [courseFavorites, setCourseFavorites] = useState<Map<string, boolean>>(new Map())
   const [processingFavorite, setProcessingFavorite] = useState<Set<string>>(new Set())
+  const [completedCourses, setCompletedCourses] = useState<Set<string>>(new Set())
+  const isCourseCompleted = (courseId: string) => completedCourses.has(courseId)
   const router = useRouter()
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -190,6 +200,21 @@ export default function CoursesPage() {
 
     setFilteredCourses(filtered)
   }, [courses, searchTerm, levelFilter, categoryFilter, sortOrder])
+
+    useEffect(() => {
+    if (!user) return
+
+    const fetchProgress = async () => {
+      const progress = await getUserProgress(user.id)
+      const completed = progress
+        .filter((p) => p.completed && p.course_id)
+        .map((p) => p.course_id as string)
+
+      setCompletedCourses(new Set(completed))
+    }
+
+    fetchProgress()
+  }, [user])
 
   const categories = Array.from(new Set(courses.map((course) => course.category)))
 
@@ -377,7 +402,17 @@ export default function CoursesPage() {
           {filteredCourses.map((course) => (
             <Card
               key={course.id}
-              className={`hover:shadow-xl transition-all duration-300 hover:scale-105 group ${isCourseLocked() ? "opacity-60" : ""}`}
+              className={`hover:shadow-xl transition-all duration-300 hover:scale-105 group
+                ${isCourseLocked() ? "opacity-60" : ""}
+              `}
+              style={
+                isCourseCompleted(course.id)
+                  ? {
+                      backgroundImage: 'repeating-linear-gradient(45deg, rgba(34,197,94,0.15) 0, rgba(34,197,94,0.15) 2px, transparent 5px, transparent 10px)',
+                      border: '1px solid #22c55e'
+                    }
+                  : {}
+              }
             >
               <div className="relative">
                 <img
@@ -392,11 +427,20 @@ export default function CoursesPage() {
                     e.currentTarget.src =
                       "/img_IA.jpg"
                   }}
+
                 />
-                {isCompleted && (
+                {isCourseCompleted(course.id) && (
                   <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded shadow-lg z-10">
                     <Check className="inline h-4 w-4 mr-1" />
                     Terminé
+                  </div>
+                )}
+                {courseFavorites.get(course.id) && (
+                  <div className="absolute top-2 right-2">
+                    <Badge className="bg-yellow-500 text-white cursor-default hover:bg-yellow-500">
+                      <Star className="h-3 w-3 mr-1 fill-current" />
+                      Favori
+                    </Badge>
                   </div>
                 )}
                 {isCourseLocked() && (
@@ -428,26 +472,15 @@ export default function CoursesPage() {
                     {course.title}
                   </CardTitle>
                   <Badge className={getLevelColor(course.level)}>{course.level}</Badge>
-                  {isCompleted && (
-                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                    <Check className="h-3 w-3 mr-1" /> Terminé</Badge>)}
-
                 </div>
                 <CardDescription>{course.description}</CardDescription>
-                {courseFavorites.get(course.id) && (
-                  <div className="absolute top-4 right-4">
-                    <Badge className="bg-yellow-500 text-white cursor-default hover:bg-yellow-500">
-                      <Star className="h-3 w-3 mr-1 fill-current" />
-                      Favori
-                    </Badge>
-                  </div>
-                )}
+
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    {course.duration} min
+                    {formatReadTime(course.duration)}
                   </div>
                   <Badge variant="outline">{course.category}</Badge>
                 </div>

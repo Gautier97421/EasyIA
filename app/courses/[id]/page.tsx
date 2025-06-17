@@ -22,6 +22,14 @@ function extractYouTubeId(url: string): string | null {
 }
 
 export default function CourseDetailPage() {
+  function formatReadTime(minutes: number): string {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      return `${hours}h${remainingMinutes > 0 ? ` ${remainingMinutes} min` : ""} de lecture`
+    }
+    return `${minutes} min de lecture`
+  }
   const params = useParams()
   const [course, setCourse] = useState<Course | null>(null)
   const { user, profile, loading, isAdmin } = useAuth()
@@ -187,7 +195,7 @@ export default function CourseDetailPage() {
           <p className="text-xl text-muted-foreground mb-6">{course.description}</p>
           <div className="flex items-center text-sm text-muted-foreground">
             <Clock className="h-4 w-4 mr-1" />
-            {course.duration} minutes
+            {formatReadTime(course.duration)}
           </div>
         </div>
 
