@@ -20,8 +20,16 @@ function extractYouTubeId(url: string): string | null {
   const match = url.match(regex)
   return match ? match[1] : null
 }
+const nextCoursesMap: Record<string, string> = {
+  "8586ec91-a638-4a4f-b9d3-1fa2710e36bd": "177bf238-3918-450e-95ab-df2cb809e0a8",
+  "177bf238-3918-450e-95ab-df2cb809e0a8": "29793b44-19bd-4107-b77f-9fdf1d07ea6e",
+  "29793b44-19bd-4107-b77f-9fdf1d07ea6e": "9a79f2e2-2430-4efb-8640-ebcaa81e4530",
+}
 
 export default function CourseDetailPage() {
+  const params = useParams()
+  const currentCourseId = params?.id as string
+  const nextCourseId = nextCoursesMap[currentCourseId]
   function formatReadTime(minutes: number): string {
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60)
@@ -30,7 +38,6 @@ export default function CourseDetailPage() {
     }
     return `${minutes} min de lecture`
   }
-  const params = useParams()
   const [course, setCourse] = useState<Course | null>(null)
   const { user, profile, loading, isAdmin } = useAuth()
   const [isCompleted, setIsCompleted] = useState(false)
@@ -309,15 +316,16 @@ export default function CourseDetailPage() {
           </Card>
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-center">
-          <Link href="/courses">
-            <Button size="lg">
-              <Play className="h-4 w-4 mr-2" />
-              Voir tous les cours vidéo
-            </Button>
-          </Link>
-        </div>
+        {nextCourseId && (
+          <div className="flex justify-center mt-6">
+            <Link href={`/courses/${nextCourseId}`}>
+              <Button size="lg">
+                <Play className="h-4 w-4 mr-2" />
+                Suite du cours
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

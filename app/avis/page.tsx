@@ -14,10 +14,7 @@ import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserNav } from "@/components/auth/user-nav"
 import { useAuth } from "@/hooks/use-auth"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import { supabase } from "@/lib/auth-supabase"
 
 export default function AvisPage() {
   const router = useRouter()
@@ -41,31 +38,37 @@ export default function AvisPage() {
     }
   }
 
-  // Fetch testimonials
   async function fetchTestimonials() {
-    const { data, error } = await supabase
-      .from("reviews")
-      .select(`
-        *,
-        profiles (
-          name
-        )
-      `)
-      .order("created_at", { ascending: false })
-
+    const { data: reviews, error } = await supabase.from("reviews").select("*").order("created_at", { ascending: false }).limit(3);
 
     if (error) {
       console.error("Erreur chargement avis :", error.message)
       return
     }
-    console.log("Avis récupérés :", data)
-    setTestimonials(data || [])
+
+    const userIds = reviews.map((r) => r.user_id)
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, name")
+      .in("id", userIds)
+
+    if (profileError) {
+      console.error("Erreur chargement profils :", profileError.message)
+      return
+    }
+
+    const merged = reviews.map((r) => ({
+      ...r,
+      profiles: profileData?.find((p) => p.id === r.user_id) || null,
+    }))
+
+    setTestimonials(merged || [])
   }
+
 
   // Fetch stats
   async function fetchStats() {
-    const { data, error } = await supabase.from("reviews").select("rating")
-
+    const { data, error } = await supabase.from("reviews").select("*")
     if (error) {
       console.error("Erreur fetch stats", error)
       return
@@ -79,7 +82,7 @@ export default function AvisPage() {
       })
       return
     }
-
+    const userIds = data.map((r) => r.user_id)
     const totalReviews = data.length
     const sumRatings = data.reduce((acc, r) => acc + (r.rating ?? 0), 0)
     const averageRating = parseFloat((sumRatings / totalReviews).toFixed(1))
@@ -94,6 +97,27 @@ export default function AvisPage() {
       recommendations,
     })
   }
+  async function canPostReview(userId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error(error);
+      return false;
+    }
+
+    if (data.length === 0) return true;
+
+    const lastReviewDate = new Date(data[0].created_at);
+    const now = new Date();
+    const hoursSinceLastReview = (now.getTime() - lastReviewDate.getTime()) / 1000 / 3600;
+
+    return hoursSinceLastReview >= 24;
+  }
 
   useEffect(() => {
     fetchTestimonials()
@@ -103,6 +127,12 @@ export default function AvisPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (rating === 0 || !user) return
+
+    const canPost = await canPostReview(user.id)
+    if (!canPost) {
+      alert("Vous avez déjà posté un avis dans les dernières 24 heures. Merci de patienter.")
+      return
+    }
 
     const { error } = await supabase.from("reviews").insert([
       {
@@ -124,43 +154,6 @@ export default function AvisPage() {
     await fetchStats()
   }
 
-  // const testimonials = [
-  //   {
-  //     name: "Marie Dubois",
-  //     role: "Marketing Manager",
-  //     rating: 5,
-  //     comment: "EasyIA m'a permis de découvrir ChatGPT et d'automatiser mes campagnes email. Je gagne 3h par semaine !",
-  //     date: "Il y a 2 semaines",
-  //   },
-  //   {
-  //     name: "Thomas Martin",
-  //     role: "Consultant",
-  //     rating: 5,
-  //     comment: "Les cours sont très clairs et pratiques. J'utilise maintenant l'IA pour mes présentations clients.",
-  //     date: "Il y a 1 mois",
-  //   },
-  //   {
-  //     name: "Sophie Laurent",
-  //     role: "RH",
-  //     rating: 4,
-  //     comment: "Excellente plateforme pour débuter. Les exemples concrets m'ont beaucoup aidée.",
-  //     date: "Il y a 3 semaines",
-  //   },
-  //   {
-  //     name: "Pierre Durand",
-  //     role: "Chef de projet",
-  //     rating: 5,
-  //     comment: "Formation complète et accessible. Je recommande vivement pour tous les professionnels.",
-  //     date: "Il y a 1 semaine",
-  //   },
-  // ]
-
-  // const stats = {
-  //   totalReviews: 847,
-  //   averageRating: 4.8,
-  //   satisfaction: 98,
-  //   recommendations: 96,
-  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-background to-purple-50 dark:from-gray-900 dark:via-background dark:to-purple-900">
@@ -216,7 +209,7 @@ export default function AvisPage() {
         </div>
 
         {/* Stats Section */}
-        <div className="grid md:grid-cols-4 gap-6 mb-12">
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
           <Card className="text-center">
             <CardHeader className="pb-2">
               <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -250,18 +243,6 @@ export default function AvisPage() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">Satisfaction</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader className="pb-2">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="text-3xl font-bold text-foreground">{stats.recommendations}%</div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Recommandent</p>
             </CardContent>
           </Card>
         </div>

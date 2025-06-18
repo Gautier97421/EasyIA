@@ -60,7 +60,7 @@ export default function NewGuidePage() {
         read_time: Number.parseInt(readTime),
         level: level as "débutant" | "intermédiaire" | "avancé",
         category,
-        thumbnail: thumbnail || "/placeholder.svg?height=200&width=300",
+        thumbnail: thumbnail || "\img_IA.jpg",
         tools,
       })
 
@@ -181,7 +181,7 @@ export default function NewGuidePage() {
                 <Label htmlFor="thumbnail">URL de l'image (optionnel)</Label>
                 <Input
                   id="thumbnail"
-                  type="url"
+                  type="text"
                   value={thumbnail}
                   onChange={(e) => setThumbnail(e.target.value)}
                   placeholder="https://..."

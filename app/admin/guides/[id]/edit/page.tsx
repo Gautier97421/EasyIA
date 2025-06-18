@@ -202,11 +202,13 @@ export default function EditGuidePage() {
                 <Label htmlFor="thumbnail">URL de l'image (optionnel)</Label>
                 <Input
                   id="thumbnail"
-                  type="url"
+                  type="text"
                   value={thumbnail}
                   onChange={(e) => setThumbnail(e.target.value)}
                   placeholder="https://..."
+                  
                 />
+                {thumbnail && (<img src={thumbnail} alt="Aperçu de l'image" className="max-w-xs max-h-48 object-contain mt-2" />)}
               </div>
 
               <div className="space-y-2">

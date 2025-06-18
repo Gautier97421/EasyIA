@@ -556,42 +556,6 @@ export async function sendContactMessage(name: string, email: string, subject: s
 
 // Fonction pour insérer les données initiales
 export async function seedDatabase() {
-  const initialCourses = [
-    {
-      title: "Introduction à ChatGPT",
-      description: "Découvrez les bases de ChatGPT et comment l'utiliser efficacement",
-      video_url: "/placeholder.mp4",
-      duration: 15,
-      level: "débutant" as const,
-      category: "IA Générative",
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      tools: ["ChatGPT", "OpenAI API"],
-    },
-    {
-      title: "Prompts avancés pour l'IA",
-      description: "Maîtrisez l'art du prompting pour obtenir de meilleurs résultats",
-      video_url: "/placeholder.mp4",
-      duration: 25,
-      level: "intermédiaire" as const,
-      category: "Techniques",
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      tools: ["ChatGPT", "Claude", "Gemini"],
-    },
-    {
-      title: "IA pour la productivité",
-      description: "Automatisez vos tâches quotidiennes avec l'IA",
-      video_url: "/placeholder.mp4",
-      duration: 20,
-      level: "débutant" as const,
-      category: "Productivité",
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      tools: ["Notion AI", "Zapier", "Make"],
-    },
-  ]
-
-  const { error: coursesError } = await supabase.from("courses").insert(initialCourses)
-
-  if (coursesError) console.error("Error seeding courses:", coursesError)
 
   // Insérer les guides initiaux
   const initialGuides = [
@@ -615,7 +579,7 @@ ChatGPT est un modèle de langage développé par OpenAI...
       read_time: 10,
       level: "débutant" as const,
       category: "IA Générative",
-      thumbnail: "/placeholder.svg?height=200&width=300",
+      thumbnail: "/img_IA.jpg",
       tools: ["ChatGPT", "OpenAI Playground"],
     },
     {
@@ -636,7 +600,7 @@ ChatGPT est un modèle de langage développé par OpenAI...
       read_time: 8,
       level: "intermédiaire" as const,
       category: "Productivité",
-      thumbnail: "/placeholder.svg?height=200&width=300",
+      thumbnail: "/img_IA.jpg",
       tools: ["Gamma", "Canva AI", "Beautiful.ai"],
     },
   ]

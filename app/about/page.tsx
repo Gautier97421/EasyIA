@@ -12,14 +12,11 @@ import { useAuth } from "@/hooks/use-auth"
 import { getCourses, getGuides, introGuide } from "@/lib/auth-supabase"
 import { UserNav } from "@/components/auth/user-nav"
 import { IntroGuide } from "@/lib/types"
-import type { Database } from "@/lib/types2/database"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { supabase } from "@/lib/auth-supabase"
 
-const supabase = createClientComponentClient<Database>()
 
 export default function AboutPage() {
   const router = useRouter()
-  const { user, profile, isAdmin } = useAuth()
   const [stats, setStats] = useState({
     courses: 0,
     hours: 0,
@@ -33,6 +30,20 @@ export default function AboutPage() {
     } else {
       router.push("/")
     }
+  }
+  async function fetchSatisfaction() {
+    const { data, error } = await supabase.from("reviews").select("*")
+    console.log(data, error)
+    if (error) {
+      console.error("Erreur fetch stats", error)
+      return 0
+    }
+    if (!data || data.length === 0) return 0
+
+    const totalReviews = data.length
+    const satisfiedCount = data.filter((r) => (r.rating ?? 0) >= 4).length
+    const satisfaction = Math.round((satisfiedCount / totalReviews) * 100)
+    return satisfaction
   }
 
   useEffect(() => {
@@ -50,18 +61,17 @@ export default function AboutPage() {
         }
 
         const totalUsers = count ?? 0
-        console.log("Total users =", totalUsers)
 
         const totalCourses = courses.length + guides.length
         const totalHours =
           courses.reduce((acc, course) => acc + course.duration, 0) +
           guides.reduce((acc, guide) => acc + guide.read_time, 0) +
           introGuides.reduce((acc, guide) => acc + guide.readTime, 0)
-
+        const satisfaction = await fetchSatisfaction()
         setStats({
           courses: totalCourses,
           hours: Math.ceil(totalHours / 60),
-          satisfaction: 98,
+          satisfaction,
           users: totalUsers,
         })
       } catch (error) {

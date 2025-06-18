@@ -418,8 +418,7 @@ export default function CoursesPage() {
                 <img
                   src={
                     course.thumbnail ||
-                    "/img_IA.jpg" ||
-                    "/placeholder.svg"
+                    "/img_IA.jpg"
                   }
                   alt={course.title}
                   className="w-full h-48 object-cover rounded-t-lg"
