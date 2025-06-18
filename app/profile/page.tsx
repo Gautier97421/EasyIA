@@ -302,7 +302,7 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                               <div className="relative">
                                 <img
-                                  src={"/img_IA.jpg"}
+                                  src={course.thumbnail || "/img_IA.jpg"}
                                   alt={course.title}
                                   className="w-20 h-20 object-cover rounded"
                                 />
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                               <div className="relative">
                                 <img
-                                  src={guide.thumbnail || "/placeholder.svg?height=60&width=80"}
+                                  src={guide.thumbnail || "/img_IA.jpg"}
                                   alt={guide.title}
                                   className="w-20 h-20 object-cover rounded"
                                 />
@@ -403,7 +403,7 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                               <div className="relative">
                                 <img
-                                  src={"/img_IA.jpg"}
+                                  src={course.thumbnail || "/img_IA.jpg"}
                                   alt={course.title}
                                   className="w-20 h-20 object-cover rounded"
                                 />
@@ -443,7 +443,7 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                               <div className="relative">
                                 <img
-                                  src={guide.thumbnail || "/placeholder.svg?height=60&width=80"}
+                                  src={guide.thumbnail || "/img_IA.jpg"}
                                   alt={guide.title}
                                   className="w-20 h-20 object-cover rounded"
                                 />

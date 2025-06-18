@@ -169,7 +169,7 @@ export default function AboutPage() {
             À propos de nous
           </Badge>
           <h1 className="text-4xl font-bold text-foreground mb-6">
-            Notre mission : démocratiser l'
+            La mission : démocratiser l'
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
               Intelligence Artificielle
             </span>
@@ -197,50 +197,31 @@ export default function AboutPage() {
           ))}
         </div>
 
-        {/* Story Section */}
-        <div className="grid lg:grid-cols-2 gap-12 mb-16">
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-6">Notre histoire</h2>
-            <div className="space-y-4 text-muted-foreground">
+        {/* About site */}
+        <div className="mb-16">
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-2xl">À propos du site</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <p>
-                EasyIA a été fondée en 2023 avec la conviction que l'IA allait révolutionner le monde du travail. J'ai
-                constaté que malgré le potentiel énorme de ces technologies, la plupart des professionnels ne savaient
-                pas comment les utiliser concrètement.
+                EasyIA est une toute nouvelle plateforme dédiée à rendre l'intelligence artificielle accessible et utile dans le monde professionnel.
               </p>
               <p>
-                C'est pourquoi j'ai créé cette plateforme d'apprentissage unique, focalisée sur la pratique et
-                l'application concrète. Les cours sont conçus par des experts mais expliqués dans un langage accessible
-                à tous.
+                L'objectif est de proposer des contenus simples, pratiques, et directement applicables, même si vous n'avez pas de connaissances techniques avancées.
               </p>
               <p>
-                Aujourd'hui, des milliers de professionnels utilisent nos formations pour découvrir comment l'IA peut
-                les aider dans leur quotidien, de la rédaction d'emails à l'analyse de données.
+                Ce site est en constante évolution, et chaque jour nous travaillons à enrichir l’offre avec de nouveaux cours, guides et ressources adaptés aux besoins des utilisateurs.
               </p>
-            </div>
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-6">Notre vision</h2>
-            <div className="space-y-4 text-muted-foreground">
-              <p>
-                Nous imaginons un monde où chaque professionnel maîtrise les outils d'IA qui peuvent l'aider dans son
-                travail. Un monde où la technologie augmente les capacités humaines plutôt que de les remplacer.
-              </p>
-              <p>
-                Notre objectif est de former 100 000 professionnels d'ici 2025, en proposant des contenus toujours plus
-                pratiques et adaptés aux besoins réels du terrain.
-              </p>
-              <p>
-                Nous croyons fermement que l'éducation est la clé pour que l'IA soit une force positive pour tous, et
-                non une source d'inquiétude ou d'exclusion.
-              </p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
+
 
         {/* Values Section */}
         <div className="mb-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">Nos valeurs</h2>
+            <h2 className="text-3xl font-bold text-foreground mb-4">Les valeurs</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Les principes qui guident notre approche pédagogique et notre développement
             </p>
