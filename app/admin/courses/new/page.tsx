@@ -216,14 +216,12 @@ export default function NewCoursePage() {
                   Ces outils apparaîtront automatiquement dans la section "Outils recommandés"
                 </p>
               </div>
-
-              <div className="mb-4">
+              <div className="space-y-2">
                 <label className="block mb-1 font-medium">Prompt (optionnel)</label>
-                <textarea
+                <Textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={6}
-                  className="w-full p-2 border border-gray-300 rounded-md"
                   placeholder="Collez ici un prompt que les utilisateurs pourront copier..."
                 />
               </div>
