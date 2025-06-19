@@ -21,6 +21,7 @@ export default function EditCoursePage() {
   const [course, setCourse] = useState<Course | null>(null)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [prompt, setPrompt] = useState("")
   const [videoUrl, setVideoUrl] = useState("")
   const [duration, setDuration] = useState("")
   const [level, setLevel] = useState("")
@@ -46,6 +47,7 @@ export default function EditCoursePage() {
         setCourse(foundCourse)
         setTitle(foundCourse.title)
         setDescription(foundCourse.description)
+        setPrompt(foundCourse.prompt)
         setVideoUrl(foundCourse.video_url)
         setDuration(foundCourse.duration.toString())
         setLevel(foundCourse.level)
@@ -74,11 +76,13 @@ export default function EditCoursePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    console.log("Tentative d'ajout de cours", { title, description, prompt, videoUrl, duration, level, category, thumbnail, tools })
 
     try {
       await updateCourse(params.id as string, {
         title,
         description,
+        prompt,
         video_url: videoUrl,
         duration: Number.parseInt(duration),
         level: level as "débutant" | "intermédiaire" | "avancé",
@@ -89,11 +93,16 @@ export default function EditCoursePage() {
 
       router.push("/admin")
     } catch (error) {
-      console.error("Erreur lors de la modification du cours:", error)
+      if (error instanceof Error) {
+        console.error("Erreur lors de la modification du cours:", error.message)
+      } else {
+        console.error("Erreur non standard lors de la modification du cours:", error)
+      }
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
+
 
   if (authLoading || !course) {
     return (
@@ -235,6 +244,16 @@ export default function EditCoursePage() {
                 <p className="text-sm text-muted-foreground">
                   Ces outils apparaîtront automatiquement dans la section "Guide Technique"
                 </p>
+              </div>
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Prompt (optionnel)</label>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={6}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Collez ici un prompt que les utilisateurs pourront copier..."
+                />
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>

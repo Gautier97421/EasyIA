@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth"
 export default function NewCoursePage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [prompt, setPrompt] = useState("")
   const [videoUrl, setVideoUrl] = useState("")
   const [duration, setDuration] = useState("")
   const [level, setLevel] = useState("")
@@ -56,6 +57,7 @@ export default function NewCoursePage() {
       await addCourse({
         title,
         description,
+        prompt,
         video_url: videoUrl,
         duration: Number.parseInt(duration),
         level: level as "débutant" | "intermédiaire" | "avancé",
@@ -213,6 +215,17 @@ export default function NewCoursePage() {
                 <p className="text-sm text-muted-foreground">
                   Ces outils apparaîtront automatiquement dans la section "Outils recommandés"
                 </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block mb-1 font-medium">Prompt (optionnel)</label>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={6}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Collez ici un prompt que les utilisateurs pourront copier..."
+                />
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>

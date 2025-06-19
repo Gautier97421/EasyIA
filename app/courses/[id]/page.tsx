@@ -30,6 +30,15 @@ export default function CourseDetailPage() {
   const params = useParams()
   const currentCourseId = params?.id as string
   const nextCourseId = nextCoursesMap[currentCourseId]
+  const [copied, setCopied] = useState(false);
+  
+  const handleCopy = () => {
+    if (!course?.prompt) return;
+    navigator.clipboard.writeText(course.prompt)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  
   function formatReadTime(minutes: number): string {
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60)
@@ -315,6 +324,31 @@ export default function CourseDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Prompt */}
+        {course.prompt && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="text-lg">Prompt à copier</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted p-4 rounded-md relative">
+                <pre className="whitespace-pre-wrap break-words text-sm text-foreground">{course.prompt}</pre>
+                <Button
+                variant={copied ? "default" : "outline"}
+                size="sm"
+                className={`absolute top-2 right-2 transition-colors duration-300 ${
+                  copied ? "bg-green-600 hover:bg-green-700 text-white" : ""
+                }`}
+                onClick={handleCopy}
+                disabled={copied}
+              >
+                {copied ? "Copié !" : "Copier"}
+              </Button>
+            </div>
+            </CardContent>
+          </Card>
+        )}
 
         {nextCourseId && (
           <div className="flex justify-center mt-6">

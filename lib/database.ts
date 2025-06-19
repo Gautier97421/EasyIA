@@ -34,6 +34,7 @@ export interface Database {
           id: string
           title: string
           description: string
+          prompt: string
           video_url: string
           duration: number
           level: "débutant" | "intermédiaire" | "avancé"
@@ -47,6 +48,7 @@ export interface Database {
           id?: string
           title: string
           description: string
+          prompt: string
           video_url: string
           duration: number
           level: "débutant" | "intermédiaire" | "avancé"
@@ -60,6 +62,7 @@ export interface Database {
           id?: string
           title?: string
           description?: string
+          prompt?: string
           video_url?: string
           duration?: number
           level?: "débutant" | "intermédiaire" | "avancé"
