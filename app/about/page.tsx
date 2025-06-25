@@ -246,7 +246,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* CTA Section - Supprimé le bouton "Voir les cours" */}
+        {/* Section - Supprimé le bouton "Voir les cours" */}
         <div className="text-center">
           <Card className="max-w-2xl mx-auto bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0">
             <CardHeader>
